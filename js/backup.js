@@ -36,7 +36,7 @@ function blobToDataUrl(blob) {
 }
 
 // Small, fast string hash (FNV-1a) to tell whether anything changed since the last backup
-function hash(str) {
+export function hash(str) {
   let h = 0x811c9dc5;
   for (let i = 0; i < str.length; i++) {
     h ^= str.charCodeAt(i);
@@ -104,7 +104,7 @@ async function saveFile(filename, text, { ask = false, quiet = false } = {}) {
 }
 
 /** True when there's nothing personal to back up yet (a fresh install). */
-function isUntouched() {
+export function isUntouched() {
   return JSON.stringify(getShortcuts()) === JSON.stringify(DEFAULT_CATEGORIES) &&
     JSON.stringify(settings.get()) === JSON.stringify(settings.DEFAULTS);
 }

@@ -23,6 +23,17 @@ With **Settings → Backup → Automatic backup** on (the default), a copy is sa
 Backups include the background image. After a move or reinstall, the page offers
 **Restore from backup**. You can also restore any time with **Settings → Backup → Restore…**.
 
+## Sync between PCs
+**Settings → Sync between PCs** keeps shortcuts and settings identical on every PC through a
+private Gist (`launchpad-sync.json`) in your GitHub account:
+1. Create a token at <https://github.com/settings/tokens/new?scopes=gist&description=Launchpad%20sync>
+   with only the **gist** scope, and paste it into the Sync section.
+2. Do the same on the other PC. It finds the same Gist and offers to load it.
+
+Changes upload a few seconds after you make them. Every new tab checks for changes from other PCs, and
+the newest change wins. The token is stored only on each PC. It is never saved in settings, backups,
+exports or the Gist. Background images don't sync.
+
 ## Project layout
 ```
 manifest.json      Extension manifest. Permissions:
@@ -44,6 +55,7 @@ js/main.js         Entry point: wires the modules together and applies settings
 js/settings.js     Settings store (localStorage). Defaults live here
 js/events.js       Page-wide events: newtab:changed (drives backup), newtab:rendered
 js/backup.js       Automatic backup, export, restore, "restore from backup" banner
+js/sync.js         Sync between PCs via a private GitHub Gist (token stays on each PC)
 js/themes.js       Theme colour definitions
 js/layouts.js      Layout list and the mini previews shown in the panel
 js/clock.js        Clock, date and greeting

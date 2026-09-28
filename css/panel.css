@@ -111,6 +111,13 @@ dialog .icon-btn { width: 30px; height: 30px; flex: none; }
 .accent-custom[aria-pressed="true"] { background: var(--sw); }
 .accent-custom input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; border: 0; padding: 0; }
 
+/* Sync section */
+.panel .steps { margin: 0 0 8px; padding-left: 20px; font-size: 13px; line-height: 1.5; }
+.panel .steps li { margin-bottom: 4px; }
+.panel .steps a { color: var(--accent); }
+.panel .sync-error { color: #e5484d; margin-top: 8px; }
+.panel .row .link-btn { align-self: center; }
+
 /* Segmented control (tile size) */
 .segmented {
   display: flex; margin-top: 6px; padding: 3px; gap: 3px;

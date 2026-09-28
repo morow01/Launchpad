@@ -219,6 +219,36 @@
         </dl>
       </section>
 
+      <section id="syncSettings">
+        <h3>Sync between PCs</h3>
+        <div id="syncOff">
+          <p class="note">Keep your shortcuts and settings the same on every PC, through a private Gist in
+            your GitHub account. (Background images don't sync.)</p>
+          <ol class="steps">
+            <li><a href="https://github.com/settings/tokens/new?scopes=gist&amp;description=Launchpad%20sync"
+                   target="_blank" rel="noopener">Create a GitHub token</a> — only the <b>gist</b> box ticked.
+              Choose an expiry (or “No expiration”), then click <b>Generate token</b>.</li>
+            <li>Copy the token and paste it here:</li>
+          </ol>
+          <form id="syncConnect" class="weather-find">
+            <input id="syncToken" type="password" placeholder="ghp_…" autocomplete="off" spellcheck="false" aria-label="GitHub token">
+            <button type="submit" class="primary">Connect</button>
+          </form>
+          <p class="note">Then do the same on your other PC — it finds the same data. The token stays on each PC
+            and is never included in backups.</p>
+        </div>
+        <div id="syncOn" hidden>
+          <p id="syncStatus" class="note"></p>
+          <label class="field"><span>This PC's name</span><input id="syncDevice" type="text" maxlength="30"></label>
+          <div class="row">
+            <button id="syncNow" type="button">Sync now</button>
+            <a id="syncGistLink" class="link-btn" target="_blank" rel="noopener" hidden>View on GitHub</a>
+            <button id="syncDisconnect" type="button" class="danger">Disconnect</button>
+          </div>
+        </div>
+        <p id="syncError" class="note sync-error" role="alert" hidden></p>
+      </section>
+
       <section>
         <h3>Backup</h3>
         <label class="toggle"><span>Automatic backup</span><input type="checkbox" data-setting="autoBackup"></label>
