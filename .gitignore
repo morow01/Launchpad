@@ -1,0 +1,15 @@
+# OS / editor clutter
+Thumbs.db
+desktop.ini
+.DS_Store
+.vscode/
+.idea/
+
+# Backups and exports made by the page (they contain your personal shortcuts and settings)
+newtab-backup*.json
+NewTab Backup/
+
+# Packaged builds
+*.zip
+*.crx
+*.pem

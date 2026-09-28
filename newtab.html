@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>New Tab</title>
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/layouts.css">
+  <link rel="stylesheet" href="css/panel.css">
+  <link rel="stylesheet" href="css/features.css">
+  <link rel="stylesheet" href="css/suggest.css">
+  <link rel="stylesheet" href="css/weather.css">
+</head>
+<body data-layout="classic">
+  <div id="bg" class="bg" aria-hidden="true"></div>
+
+  <!-- Shown on a fresh start (new install, moved folder, cleared data) -->
+  <div id="restoreBanner" class="banner" role="region" aria-label="Restore" hidden>
+    <span>👋 Starting fresh? If you have a backup, bring your shortcuts back.</span>
+    <button id="restoreBtn" type="button" class="primary">Restore from backup</button>
+    <button id="restoreDismiss" type="button" class="banner-close" aria-label="Dismiss">No thanks</button>
+  </div>
+
+  <main class="page">
+    <section class="hero">
+      <div id="time" class="time">--:--</div>
+      <div id="date" class="date"></div>
+      <div id="weather" class="weather" hidden>
+        <button id="weatherSummary" class="weather-summary" type="button"></button>
+        <div id="weatherDetails" class="weather-details" hidden></div>
+      </div>
+      <div id="greeting" class="greeting"></div>
+    </section>
+
+    <section class="content">
+      <form id="search" class="search" autocomplete="off">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+        <input id="q" type="text" placeholder="Search or type a URL" aria-label="Search"
+               role="combobox" aria-controls="suggest" aria-autocomplete="list" spellcheck="false">
+        <div id="suggest" class="suggest" role="listbox" aria-label="Suggestions" hidden></div>
+      </form>
+      <p id="searchError" class="search-error" role="alert" hidden></p>
+      <section id="recentSection" class="category recent">
+        <div class="cat-head"><h4 class="cat-title">Recently used</h4></div>
+        <div id="recentTiles" class="tiles"></div>
+      </section>
+
+      <div id="shortcutsWidget">
+        <div id="categories"></div>
+        <div id="addCategoryWrap" hidden>
+          <div class="add-row">
+            <button id="addCategory" class="add-category" type="button">+ Add category</button>
+            <button class="add-category" type="button" data-action="import-bookmarks">⭳ Import bookmarks folder</button>
+          </div>
+          <form id="newCategoryForm" class="new-category" hidden>
+            <input id="newCategoryName" placeholder="Category name" maxlength="30" aria-label="New category name">
+            <button type="submit" class="primary">Create</button>
+            <button type="button" id="newCategoryCancel">Cancel</button>
+          </form>
+        </div>
+        <p id="dropHint" class="drop-hint">Tip: drag bookmarks or links onto a category to add them</p>
+        <button id="editInline" class="edit-link" type="button">✎ Edit shortcuts</button>
+      </div>
+    </section>
+  </main>
+
+  <div id="editBar" class="edit-bar" hidden>
+    <span>Click a tile to edit · drag to reorder</span>
+    <button id="editDone" type="button" class="primary">Done</button>
+  </div>
+
+  <!-- Recently closed tabs -->
+  <button id="closedBtn" class="cog closed-btn" type="button" aria-label="Recently closed tabs" title="Recently closed tabs" aria-haspopup="menu" aria-expanded="false" hidden>
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/></svg>
+  </button>
+
+  <!-- Settings -->
+  <button id="cog" class="cog" type="button" aria-label="Settings" title="Settings">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+  </button>
+  <div id="scrim" class="scrim"></div>
+
+  <aside id="panel" class="panel" aria-label="Settings" aria-hidden="true">
+    <header class="panel-head">
+      <h2>Settings</h2>
+      <button id="panelClose" class="icon-btn" type="button" aria-label="Close">
+        <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3 3l6 6M9 3l-6 6"/></svg>
+      </button>
+    </header>
+
+    <div class="panel-body">
+      <section>
+        <h3>Theme</h3>
+        <div id="themeList" class="swatches"></div>
+        <div class="accent-head">
+          <span>Accent colour</span>
+          <button id="accentReset" type="button" class="link-btn">Use theme colour</button>
+        </div>
+        <div id="accentList" class="accents">
+          <label class="accent-custom" title="Pick any colour">
+            <input id="accentPicker" type="color" aria-label="Custom accent colour">
+          </label>
+        </div>
+      </section>
+
+      <section>
+        <h3>Tiles</h3>
+        <div class="field"><span>Size</span>
+          <div class="segmented" data-choice="tileSize" role="group" aria-label="Tile size">
+            <button type="button" data-value="small">Small</button>
+            <button type="button" data-value="normal">Normal</button>
+            <button type="button" data-value="large">Large</button>
+          </div>
+        </div>
+        <label class="toggle"><span>Show names under icons</span><input type="checkbox" data-setting="tileLabels"></label>
+      </section>
+
+      <section>
+        <h3>Layout</h3>
+        <div id="layoutList" class="layouts"></div>
+        <label class="toggle" style="margin-top: 10px"><span>Align content to top</span><input type="checkbox" data-setting="alignTop"></label>
+      </section>
+
+      <section>
+        <h3>Show on page</h3>
+        <label class="toggle"><span>Clock</span><input type="checkbox" data-show="clock"></label>
+        <label class="toggle"><span>Date</span><input type="checkbox" data-show="date"></label>
+        <label class="toggle"><span>Weather</span><input type="checkbox" data-show="weather"></label>
+        <label class="toggle"><span>Greeting</span><input type="checkbox" data-show="greeting"></label>
+        <label class="toggle"><span>Search bar</span><input type="checkbox" data-show="search"></label>
+        <label class="toggle"><span>Recently used</span><input type="checkbox" data-show="recent"></label>
+        <label class="toggle"><span>Custom shortcuts</span><input type="checkbox" data-show="shortcuts"></label>
+        <label class="toggle"><span>Recently closed tabs button</span><input type="checkbox" data-show="closed"></label>
+      </section>
+
+      <section>
+        <h3>Clock</h3>
+        <label class="toggle"><span>24-hour time</span><input type="checkbox" data-setting="clock24"></label>
+        <label class="toggle"><span>Show seconds</span><input type="checkbox" data-setting="showSeconds"></label>
+      </section>
+
+      <section id="weatherSettings">
+        <h3>Weather</h3>
+        <p id="weatherPlace" class="note inline-block"></p>
+        <form id="weatherFind" class="weather-find">
+          <input id="weatherCity" type="text" placeholder="Search a town or city…" aria-label="Town or city" autocomplete="off">
+          <button type="submit">Find</button>
+        </form>
+        <div id="weatherResults" class="weather-results"></div>
+        <div class="row">
+          <button id="weatherLocate" type="button">📍 Use my location</button>
+          <button id="weatherClear" type="button" hidden>Remove location</button>
+        </div>
+        <div class="field" style="margin-top: 12px"><span>Units</span>
+          <div class="segmented" data-choice="weatherUnit" role="group" aria-label="Temperature units">
+            <button type="button" data-value="c">°C · km/h</button>
+            <button type="button" data-value="f">°F · mph</button>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h3>Greeting</h3>
+        <label class="field"><span>Your name</span>
+          <input type="text" data-setting="name" placeholder="Optional" maxlength="30">
+        </label>
+      </section>
+
+      <section>
+        <h3>Search engine</h3>
+        <select id="engineSelect" data-setting="searchEngine" aria-label="Search engine"></select>
+        <label class="toggle" style="margin-top: 10px"><span>Suggest shortcuts, bookmarks &amp; history as I type</span><input type="checkbox" data-setting="searchSuggestions"></label>
+      </section>
+
+      <section>
+        <h3>Background</h3>
+        <div class="row">
+          <button id="bgUpload" type="button">Upload image</button>
+          <button id="bgRemove" type="button" hidden>Remove</button>
+        </div>
+        <input id="bgFile" type="file" accept="image/*" hidden>
+        <label id="dimWrap" class="field" hidden><span>Dim <output id="dimValue"></output></span>
+          <input type="range" min="0" max="80" step="5" data-setting="bgDim">
+        </label>
+      </section>
+
+      <section>
+        <h3>Shortcuts</h3>
+        <div class="row">
+          <button id="editShortcuts" type="button">Edit shortcuts</button>
+          <button type="button" data-action="import-bookmarks">Import bookmarks folder</button>
+          <button id="resetShortcuts" type="button">Reset to defaults</button>
+        </div>
+      </section>
+
+      <section>
+        <h3>Recently used</h3>
+        <label class="field"><span>Show <output id="recentValue"></output> sites</span>
+          <input type="range" min="2" max="16" step="1" data-setting="recentCount">
+        </label>
+        <label class="toggle"><span>Skip sites already in my shortcuts</span><input type="checkbox" data-setting="recentSkipShortcuts"></label>
+        <p class="note">Hover a site to 📌 pin it to a category or hide it. You can also drag it onto a category.</p>
+        <div class="row">
+          <span id="hiddenCount" class="note inline"></span>
+          <button id="unhideRecent" type="button" hidden>Show hidden sites again</button>
+        </div>
+      </section>
+
+      <section>
+        <h3>Keyboard</h3>
+        <label class="toggle"><span>Show key numbers on shortcuts</span><input type="checkbox" data-setting="showKeyHints"></label>
+        <dl class="keys" style="margin-top: 10px">
+          <dt><kbd>/</kbd></dt><dd>Jump to search</dd>
+          <dt><kbd>1</kbd>–<kbd>9</kbd></dt><dd>Open your first nine shortcuts</dd>
+          <dt><kbd>Alt</kbd>+<kbd>1</kbd>–<kbd>9</kbd></dt><dd>Same, while typing in the search bar</dd>
+          <dt><kbd>Shift</kbd>+<kbd>1</kbd>–<kbd>9</kbd></dt><dd>Open in a new tab</dd>
+          <dt><kbd>E</kbd></dt><dd>Edit shortcuts</dd>
+          <dt><kbd>Esc</kbd></dt><dd>Leave edit mode, close menus</dd>
+        </dl>
+      </section>
+
+      <section>
+        <h3>Backup</h3>
+        <label class="toggle"><span>Automatic backup</span><input type="checkbox" data-setting="autoBackup"></label>
+        <p id="backupStatus" class="note"></p>
+        <div class="row">
+          <button id="backupNow" type="button">Back up now</button>
+          <button id="exportBtn" type="button">Export…</button>
+          <button id="importBtn" type="button">Restore…</button>
+          <input id="importFile" type="file" accept="application/json,.json" hidden>
+        </div>
+        <p class="note">Backups include your shortcuts, settings and background image. Automatic backups keep a
+          copy for each weekday, so you can go back up to a week.</p>
+        <button id="resetAll" type="button" class="danger">Reset all settings</button>
+      </section>
+    </div>
+  </aside>
+
+  <dialog id="shortcutDialog">
+    <form method="dialog">
+      <h2 id="dialogTitle">Add shortcut</h2>
+      <label class="field"><span>Name</span><input id="scName" required maxlength="24"></label>
+      <label class="field"><span>URL</span><input id="scUrl" required placeholder="example.com"></label>
+      <div class="field icon-field">
+        <span>Icon <small>(optional — leave empty to find it automatically)</small></span>
+        <div class="icon-row">
+          <div id="scIconPreview" class="icon-preview" aria-hidden="true"></div>
+          <input id="scIcon" placeholder="Paste image address…" aria-label="Icon image address">
+          <button type="button" id="scIconUpload">Upload</button>
+          <button type="button" id="scIconClear" class="icon-btn" title="Remove custom icon" aria-label="Remove custom icon">
+            <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3 3l6 6M9 3l-6 6"/></svg>
+          </button>
+        </div>
+        <input id="scIconFile" type="file" accept="image/*" hidden>
+      </div>
+      <label class="toggle dialog-toggle">
+        <span>Show online status <small>— a green/red dot, handy for a NAS or home server</small></span>
+        <input id="scMonitor" type="checkbox">
+      </label>
+      <div class="actions">
+        <!-- Cancel is type="button" so pressing Enter triggers Save, not Cancel -->
+        <button type="button" id="scCancel">Cancel</button>
+        <button type="submit" value="save" class="primary">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="bookmarkDialog" class="bookmark-dialog">
+    <h2>Import a bookmarks folder</h2>
+    <p class="note">Pick a folder — it becomes a new category with its links.</p>
+    <label class="toggle dialog-toggle"><span>Include links in subfolders</span><input id="bookmarkSubfolders" type="checkbox"></label>
+    <div id="bookmarkFolders" class="folders"></div>
+    <div class="actions"><button type="button" id="bookmarkCancel">Cancel</button></div>
+  </dialog>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

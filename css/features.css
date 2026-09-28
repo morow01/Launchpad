@@ -1,0 +1,203 @@
+/* Styles for: category collapse / open-all, status dots, Recently used pin & hide,
+   bookmarks import, restore banner, toasts and the keyboard shortcut list. */
+
+/* ---- Category header actions: collapse (click the name) and "Open all" ---- */
+.cat-toggle {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 3px 8px; border-radius: 8px;
+  background: transparent; border: 0; color: var(--muted); cursor: pointer;
+}
+.cat-toggle:hover { background: var(--card); color: var(--text); }
+.cat-toggle:hover .cat-title { color: var(--text); }
+.cat-toggle .chev {
+  width: 11px; height: 11px; fill: none; stroke: currentColor; stroke-width: 1.8;
+  stroke-linecap: round; stroke-linejoin: round; transition: transform .2s ease;
+}
+.cat-toggle[aria-expanded="false"] .chev { transform: rotate(-90deg); }
+.cat-count {
+  min-width: 18px; height: 18px; padding: 0 6px; border-radius: 9px;
+  display: inline-grid; place-items: center;
+  background: var(--card); border: 1px solid var(--border);
+  font-size: 11px; font-weight: 600; color: var(--muted);
+}
+.cat-action {
+  display: grid; place-items: center;
+  width: 26px; height: 26px; padding: 0; border-radius: 8px;
+  background: transparent; border: 1px solid transparent; color: var(--muted); cursor: pointer;
+  opacity: 0; transition: opacity .15s, background .15s;
+}
+.cat-action svg {
+  width: 14px; height: 14px; fill: none; stroke: currentColor;
+  stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round;
+}
+.category:hover .cat-action, .cat-action:focus-visible { opacity: 1; }
+.cat-action:hover { background: var(--card); border-color: var(--border); color: var(--text); }
+@media (hover: none) { .cat-action { opacity: 1; } }
+.category { transition: margin-bottom .28s ease; }
+.category .cat-head { transition: margin-bottom .28s ease; }
+.category.collapsed { margin-bottom: 12px; }
+.category.collapsed .cat-head { margin-bottom: 0; }
+.cat-toggle .chev { transition: transform .28s cubic-bezier(.2, .8, .2, 1); }
+
+/* ---- Key number badge (press 1–9 to open) ---- */
+.key-hint {
+  position: absolute; top: 7px; right: 7px;
+  min-width: 17px; height: 17px; padding: 0 4px; border-radius: 5px;
+  display: grid; place-items: center;
+  font: 600 10px/1 inherit; font-family: inherit;
+  color: var(--muted);
+  background: color-mix(in srgb, var(--text) 7%, transparent);
+  border: 1px solid color-mix(in srgb, var(--text) 16%, transparent);
+  border-bottom-width: 2px;
+  pointer-events: none;
+  transition: opacity .15s, color .15s;
+}
+.tile:hover .key-hint { color: var(--text); }
+.recent-tile:hover .key-hint { opacity: 0; } /* make room for pin / hide */
+.tiles.editing .key-hint, .tile.lifted .key-hint, .tile.dropping .key-hint { display: none; }
+/* Compact tiles (icon-only or Focus layout): badges hang off the corners instead of covering the icon */
+body[data-tile-labels="off"] .key-hint,
+body[data-layout="focus"] .key-hint {
+  top: -6px; right: -6px; transform: scale(.85);
+  background: var(--bg1); border-color: color-mix(in srgb, var(--text) 22%, transparent);
+}
+body[data-tile-labels="off"] .status-dot,
+body[data-layout="focus"] .status-dot { top: -2px; left: -2px; }
+
+/* ---- Online status dot ---- */
+.status-dot {
+  position: absolute; top: 9px; left: 9px;
+  width: 9px; height: 9px; border-radius: 50%;
+  background: var(--muted); opacity: .5;
+  box-shadow: 0 0 0 2px var(--card-hover);
+}
+.status-dot.online { background: #30a46c; opacity: 1; box-shadow: 0 0 0 2px var(--card-hover), 0 0 8px #30a46c; }
+.status-dot.offline { background: #e5484d; opacity: 1; box-shadow: 0 0 0 2px var(--card-hover), 0 0 8px #e5484d; }
+.status-dot.checking { animation: pulse .8s ease-in-out infinite alternate; }
+.dialog-toggle { gap: 12px; margin: 4px 0 10px; font-size: 13px; color: var(--p-text); }
+.dialog-toggle small { color: var(--p-muted); }
+
+/* ---- Recently used: pin / hide buttons on hover ---- */
+.recent-tile { cursor: pointer; }
+.tile-actions {
+  position: absolute; top: 5px; right: 5px;
+  display: flex; gap: 3px;
+  opacity: 0; transform: translateY(-2px);
+  transition: opacity .15s, transform .15s;
+}
+.recent-tile:hover .tile-actions, .tile-actions:focus-within { opacity: 1; transform: none; }
+@media (hover: none) { .tile-actions { opacity: 1; transform: none; } }
+.tile-act {
+  display: grid; place-items: center;
+  width: 22px; height: 22px; padding: 0; border-radius: 50%;
+  border: 1px solid color-mix(in srgb, var(--text) 22%, transparent);
+  background: color-mix(in srgb, var(--bg1) 70%, transparent);
+  backdrop-filter: blur(6px);
+  color: var(--text); cursor: pointer;
+  transition: background .15s, transform .15s;
+}
+.tile-act svg {
+  width: 12px; height: 12px; fill: none; stroke: currentColor;
+  stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round;
+}
+.tile-act:hover { background: var(--accent); border-color: var(--accent); color: #fff; transform: scale(1.1); }
+
+/* Pin menu */
+.menu {
+  position: absolute; z-index: 60; min-width: 180px; max-width: 260px;
+  padding: 6px; border-radius: 12px;
+  background: var(--p-bg); color: var(--p-text); border: 1px solid var(--p-border);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, .25);
+  animation: pop-in .15s ease-out;
+}
+.menu-heading {
+  padding: 6px 10px 4px; font-size: 11px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: .06em; color: var(--p-muted);
+}
+.menu button {
+  display: block; width: 100%; text-align: left;
+  padding: 8px 10px; border-radius: 8px; border: 0;
+  background: transparent; color: var(--p-text); font: inherit; font-size: 14px; cursor: pointer;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.menu button:hover, .menu button:focus-visible { background: color-mix(in srgb, var(--accent) 16%, transparent); outline: none; }
+.menu .menu-new { color: var(--accent); border-top: 1px solid var(--p-border); border-radius: 0 0 8px 8px; margin-top: 4px; }
+
+/* ---- Edit mode: add-category + import row ---- */
+.add-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-bottom: 6px; }
+.add-row .add-category { margin: 0; }
+body[data-layout="split"] .add-row { justify-content: flex-start; }
+
+/* ---- Bookmarks import dialog ---- */
+.bookmark-dialog { width: min(440px, calc(100vw - 32px)); }
+.bookmark-dialog .note { margin: -6px 0 10px; font-size: 13px; color: var(--p-muted); }
+.folders {
+  max-height: min(50vh, 380px); overflow-y: auto;
+  border: 1px solid var(--p-border); border-radius: 10px; padding: 4px;
+  margin-bottom: 12px; font-size: 14px; color: var(--p-muted);
+}
+dialog .folders .folder {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  width: 100%; padding-top: 8px; padding-bottom: 8px; padding-right: 12px;
+  border: 0; border-radius: 8px; background: transparent;
+  text-align: left; font-size: 14px;
+}
+dialog .folders .folder:hover { background: color-mix(in srgb, var(--accent) 14%, transparent); }
+.folders .folder span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.folders .folder small { flex: none; color: var(--p-muted); font-size: 12px; }
+
+/* ---- Restore banner & toast ---- */
+.banner {
+  position: fixed; top: 16px; left: 50%; transform: translateX(-50%); z-index: 30;
+  display: flex; align-items: center; flex-wrap: wrap; justify-content: center; gap: 10px;
+  width: max-content; max-width: calc(100vw - 100px);
+  padding: 10px 12px 10px 18px; border-radius: 14px;
+  background: var(--p-bg); color: var(--p-text); border: 1px solid var(--accent);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .2); font-size: 14px;
+}
+.banner button {
+  padding: 7px 14px; border-radius: 8px; font-size: 13px; cursor: pointer;
+  border: 1px solid var(--p-border); background: transparent; color: var(--p-text);
+}
+
+.toast {
+  position: fixed; left: 50%; bottom: 84px; transform: translateX(-50%); z-index: 70;
+  padding: 10px 18px; border-radius: 999px;
+  background: var(--p-bg); color: var(--p-text); border: 1px solid var(--p-border);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, .2); font-size: 13px;
+  transition: opacity .35s, transform .35s;
+}
+.toast.out { opacity: 0; transform: translate(-50%, 8px); }
+
+/* ---- Recently closed tabs (button left of the cog) ---- */
+.cog.closed-btn { right: 66px; }
+.cog.closed-btn:hover { transform: rotate(-35deg); }
+.closed-menu { width: min(340px, calc(100vw - 16px)); max-width: none; max-height: min(70vh, 560px); overflow-y: auto; }
+.menu .closed-item {
+  display: flex; align-items: center; gap: 10px;
+  white-space: normal;
+}
+.closed-icon {
+  flex: none; width: 20px; height: 20px; border-radius: 5px;
+  display: grid; place-items: center;
+  background: var(--accent) center / contain no-repeat; color: #fff;
+  font-size: 11px; font-weight: 700;
+}
+.closed-icon[style*="background-image"] { background-color: transparent; }
+.closed-text { display: flex; flex-direction: column; min-width: 0; }
+.closed-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
+.closed-text small { color: var(--p-muted); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.closed-empty { margin: 6px 10px 8px; font-size: 13px; color: var(--p-muted); }
+.closed-tip { margin: 6px 10px 4px; padding-top: 8px; border-top: 1px solid var(--p-border); font-size: 11px; color: var(--p-muted); }
+
+/* ---- Keyboard shortcut list in the settings panel ---- */
+.keys { display: grid; grid-template-columns: auto 1fr; gap: 8px 12px; margin: 0; font-size: 13px; align-items: baseline; }
+.keys dt { white-space: nowrap; color: var(--p-muted); }
+.keys dd { margin: 0; }
+kbd {
+  display: inline-block; min-width: 20px; padding: 1px 6px; border-radius: 5px;
+  border: 1px solid var(--p-border); border-bottom-width: 2px;
+  background: var(--p-card); color: var(--p-text);
+  font-family: inherit; font-size: 11px; font-weight: 600; line-height: 1.5; text-align: center;
+}
+.panel .note.inline { margin: 0; align-self: center; }

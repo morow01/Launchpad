@@ -1,0 +1,71 @@
+/* Each layout is selected by <body data-layout="...">. Register new ones in js/layouts.js. */
+
+.page { width: 100%; }
+
+/* ---- Classic: centred column ---- */
+body[data-layout="classic"] .page {
+  max-width: 760px;
+  padding: 14vh 16px 40px;
+  text-align: center;
+}
+
+/* ---- Focus: huge clock, vertically centred, icon-only shortcuts ---- */
+body[data-layout="focus"] .page {
+  max-width: 700px;
+  min-height: 100vh;
+  display: flex; flex-direction: column; justify-content: center;
+  padding: 40px 16px;
+  text-align: center;
+}
+body[data-layout="focus"] .time { font-size: clamp(80px, 16vw, 180px); font-weight: 200; letter-spacing: -4px; }
+body[data-layout="focus"] .greeting { font-weight: 400; color: var(--muted); }
+body[data-layout="focus"] .search { max-width: 440px; height: 44px; margin: 30px auto 26px; }
+body[data-layout="focus"] .tiles { gap: 10px; }
+body[data-layout="focus"] .tile { width: auto; padding: calc(12px * var(--tile-scale)); }
+body[data-layout="focus"] .tile .label { display: none; }
+
+/* ---- Split: clock on the left, search + shortcuts on the right ---- */
+body[data-layout="split"] .page {
+  max-width: 1100px;
+  min-height: 100vh;
+  display: grid; grid-template-columns: 1fr 1.2fr; align-items: center; gap: 56px;
+  padding: 40px 40px;
+  text-align: left;
+}
+body[data-layout="split"] .search { margin: 0 0 24px; max-width: none; }
+body[data-layout="split"] .tiles,
+body[data-layout="split"] .cat-head { justify-content: flex-start; }
+body[data-layout="split"] .cat-name { text-align: left; }
+body[data-layout="split"] .add-category,
+body[data-layout="split"] .new-category { margin-left: 0; }
+@media (max-width: 820px) {
+  body[data-layout="split"] .page { grid-template-columns: 1fr; gap: 24px; text-align: center; padding: 12vh 16px 40px; min-height: 0; }
+  body[data-layout="split"] .search { margin: 0 auto 24px; }
+  body[data-layout="split"] .tiles { justify-content: center; }
+}
+
+/* ---- Top bar: small clock in the corner, search front and centre ---- */
+body[data-layout="topbar"] .page {
+  max-width: 900px;
+  padding: 0 16px 40px;
+  text-align: center;
+}
+body[data-layout="topbar"] .hero {
+  position: fixed; top: 18px; left: 24px; right: 130px; /* clear of the two corner buttons */
+  display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px 16px;
+  text-align: left;
+}
+body[data-layout="topbar"] .time { font-size: 32px; font-weight: 400; letter-spacing: 0; }
+body[data-layout="topbar"] .date,
+body[data-layout="topbar"] .greeting { margin: 0; font-size: 15px; }
+body[data-layout="topbar"] .greeting { color: var(--muted); font-weight: 400; }
+body[data-layout="topbar"] .content { padding-top: 28vh; }
+body[data-layout="topbar"] .search { height: 58px; border-radius: 29px; max-width: 640px; }
+body[data-layout="topbar"] { --tile-base: 124px; --icon-base: 40px; }
+body[data-layout="topbar"] .tile { padding: calc(20px * var(--tile-scale)) 8px calc(14px * var(--tile-scale)); }
+
+/* ---- "Align content to top" option: body[data-valign="top"] ---- */
+body[data-valign="top"][data-layout="classic"] .page { padding-top: 7vh; }
+body[data-valign="top"][data-layout="focus"] .page { justify-content: flex-start; padding-top: 8vh; }
+body[data-valign="top"][data-layout="split"] .page { align-items: start; padding-top: 10vh; }
+body[data-valign="top"][data-layout="topbar"] .content { padding-top: 13vh; }
