@@ -1,10 +1,11 @@
 // Backups of shortcuts, settings and the background image.
 //
-// Automatic backup saves a file to Downloads/NewTab Backup/ (via chrome.downloads):
-//   newtab-backup.json          — always the latest
+// Automatic backup saves ONE file, at most once a day, to Downloads/NewTab Backup/:
 //   newtab-backup-<Weekday>.json — one per weekday, so there's a week of history
 // Files survive anything that wipes the extension's own storage — moving the folder,
 // reinstalling, clearing site data — which is why backups don't live in Brave's storage.
+// If Brave's "Ask where to save each file" is on, Brave shows a save dialog for it;
+// cancelling that is remembered (no retry until tomorrow) and explained in Settings.
 
 import * as settings from "./settings.js";
 import { getShortcuts, setShortcuts, DEFAULT_CATEGORIES } from "./shortcuts.js";
@@ -14,7 +15,7 @@ const FOLDER = "NewTab Backup";
 const META_KEY = "newtab.backupMeta";        // { hash, time }
 const WELCOME_KEY = "newtab.welcomeDone";    // set once the restore prompt has been answered
 const DATA_KEYS = ["newtab.categories", "newtab.settings", "newtab.shortcuts"];
-const MIN_INTERVAL = 30 * 60 * 1000;         // auto-backup at most every 30 minutes
+const MIN_INTERVAL = 24 * 60 * 60 * 1000;    // auto-backup at most once a day
 const DEBOUNCE = 8000;                       // wait for changes to settle
 
 const canDownload = () => !!globalThis.chrome?.downloads?.download;
@@ -69,37 +70,54 @@ export async function restoreBackup(data) {
   markWelcomeDone();
 }
 
+/**
+ * Saves a file to Downloads. Resolves to "complete", "cancelled" (the user closed Brave's
+ * save dialog) or "failed". Manual exports resolve as soon as they start.
+ */
 async function saveFile(filename, text, { ask = false, quiet = false } = {}) {
   const blob = new Blob([text], { type: "application/json" });
   const url = URL.createObjectURL(blob);
+  const cleanup = () => setTimeout(async () => {
+    URL.revokeObjectURL(url);
+    if (quiet) try { await chrome.downloads.setUiOptions({ enabled: true }); } catch {}
+  }, 2000);
+
+  if (!canDownload()) {
+    // Outside the extension: normal browser download
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename.split("/").pop();
+    a.click();
+    cleanup();
+    return "complete";
+  }
+
   try {
-    if (!canDownload()) {
-      // Outside the extension: normal browser download
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = filename.split("/").pop();
-      a.click();
-      return;
-    }
     // Hide the download bubble for silent automatic backups (needs "downloads.ui")
     if (quiet) try { await chrome.downloads.setUiOptions({ enabled: false }); } catch {}
     const id = await chrome.downloads.download({
       url, filename, saveAs: ask, conflictAction: ask ? "uniquify" : "overwrite",
     });
-    // Keep automatic backups out of the downloads list (the file itself stays)
-    if (quiet && id !== undefined) {
+    if (!quiet || id === undefined) return "complete";
+
+    // Wait for the automatic backup to finish (or for the user to cancel a save dialog)
+    return await new Promise((resolve) => {
       const done = (delta) => {
         if (delta.id !== id || !delta.state || delta.state.current === "in_progress") return;
         chrome.downloads.onChanged.removeListener(done);
-        if (delta.state.current === "complete") chrome.downloads.erase({ id }).catch(() => {});
+        if (delta.state.current === "complete") {
+          chrome.downloads.erase({ id }).catch(() => {}); // keep it out of the downloads list
+          resolve("complete");
+        } else {
+          resolve(delta.error?.current === "USER_CANCELED" ? "cancelled" : "failed");
+        }
       };
       chrome.downloads.onChanged.addListener(done);
-    }
+    });
+  } catch {
+    return "failed";
   } finally {
-    setTimeout(async () => {
-      URL.revokeObjectURL(url);
-      if (quiet) try { await chrome.downloads.setUiOptions({ enabled: true }); } catch {}
-    }, 2000);
+    cleanup();
   }
 }
 
@@ -132,9 +150,17 @@ export async function backupNow({ force = false } = {}) {
     }
     const text = JSON.stringify(data);
     const day = new Date().toLocaleDateString("en-GB", { weekday: "long" });
-    await saveFile(`${FOLDER}/newtab-backup.json`, text, { quiet: true });
-    await saveFile(`${FOLDER}/newtab-backup-${day}.json`, text, { quiet: true });
-    writeMeta({ hash: h, time: Date.now() });
+    const result = await saveFile(`${FOLDER}/newtab-backup-${day}.json`, text, { quiet: true });
+
+    if (result === "cancelled") {
+      // Brave asked where to save and the dialog was closed. Don't ask again until tomorrow.
+      writeMeta({ ...meta, time: Date.now(), cancelled: true });
+      updateStatus();
+      if (!force) toast("Backup skipped — see Settings › Backup to stop Brave asking");
+      return "cancelled";
+    }
+    if (result === "failed") return false;
+    writeMeta({ hash: h, time: Date.now(), cancelled: false });
     updateStatus();
     return true;
   } catch (err) {
@@ -195,8 +221,16 @@ export function updateStatus() {
     el.textContent = "Automatic backup works when the page runs as the Brave extension.";
     return;
   }
-  const { time } = readMeta();
-  el.textContent = `Saved in Downloads › ${FOLDER}. ` + (time ? `Last backup: ${ago(time)}.` : "No backup yet.");
+  const { time, cancelled } = readMeta();
+  if (cancelled) {
+    el.textContent =
+      "The last automatic backup was skipped because Brave's save dialog was closed. Brave shows that dialog " +
+      "when “Ask where to save each file” is on (brave://settings/downloads) — turn it off for silent " +
+      "backups, or turn Automatic backup off here. Launchpad won't ask more than once a day.";
+    return;
+  }
+  el.textContent = `Once a day when something changed, to Downloads › ${FOLDER}. ` +
+    (time ? `Last backup: ${ago(time)}.` : "No backup yet.");
 }
 
 export function toast(message) {
@@ -252,7 +286,7 @@ export function initBackup() {
     if (!canDownload()) return alert("Automatic backup works when the page runs as the Brave extension. Use Export instead.");
     if (isUntouched()) return toast("Nothing to back up yet");
     const ok = await backupNow({ force: true });
-    toast(ok ? `Backed up to Downloads › ${FOLDER}` : "Backup failed");
+    toast(ok === true ? `Backed up to Downloads › ${FOLDER}` : ok === "cancelled" ? "Backup cancelled" : "Backup failed");
   });
   document.getElementById("exportBtn").addEventListener("click", exportBackup);
   document.getElementById("importBtn").addEventListener("click", pickAndRestore);

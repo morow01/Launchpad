@@ -16,9 +16,12 @@ Shortcuts and settings are stored inside Brave, tied to this extension. Brave id
 unpacked extension by its folder path, so **moving or renaming this folder starts it fresh**.
 
 With **Settings → Backup → Automatic backup** on (the default), a copy is saved to
-`Downloads/NewTab Backup/` whenever something changes, at most every 30 minutes:
-- `newtab-backup.json` is always the latest copy.
-- `newtab-backup-<Weekday>.json` keeps one copy per weekday, so you can go back up to a week.
+`Downloads/NewTab Backup/` at most once a day, and only when something changed. It writes one file per
+weekday (`newtab-backup-<Weekday>.json`), so you can go back up to a week.
+
+If Brave's **Ask where to save each file before downloading** setting (`brave://settings/downloads`) is on,
+Brave shows a save dialog for each backup. Turn that setting off for silent backups, or turn automatic
+backup off. If you close the dialog, Launchpad won't ask again until the next day.
 
 Backups include the background image. After a move or reinstall, the page offers
 **Restore from backup**. You can also restore any time with **Settings → Backup → Restore…**.
