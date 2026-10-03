@@ -293,7 +293,14 @@ function render() {
       del.title = "Delete category";
       del.innerHTML = CLOSE_ICON;
       del.addEventListener("click", () => deleteCategory(ci));
-      head.append(title, ok, del);
+      // "+ Add" lives in the heading, so the tiles don't shift when edit mode starts
+      const addBtn = document.createElement("button");
+      addBtn.type = "button";
+      addBtn.className = "cat-add";
+      addBtn.title = `Add a shortcut to ${cat.name}`;
+      addBtn.textContent = "+ Add";
+      addBtn.addEventListener("click", () => openDialog(ci, null));
+      head.append(title, ok, addBtn, del);
     } else {
       // Click the name to collapse / expand the category
       const toggle = document.createElement("button");
@@ -356,7 +363,8 @@ function render() {
       tiles.append(tile);
     });
 
-    if (editing) {
+    if (editing && cat.items.length === 0) {
+      // Empty category: a big Add tile (nothing to shift), which is also the drop target
       const add = document.createElement("button");
       add.type = "button";
       add.className = "tile add";
