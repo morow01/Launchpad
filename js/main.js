@@ -3,7 +3,7 @@ import { applyTheme } from "./themes.js";
 import { LAYOUTS } from "./layouts.js";
 import { initClock } from "./clock.js";
 import { initSearch, updateSearch, focusSearch } from "./search.js";
-import { initShortcuts, getShortcuts, addToCategory, importCategory, isEditing, setEditing, refreshShortcuts } from "./shortcuts.js";
+import { initShortcuts, getShortcuts, addToCategory, importCategory, isEditing, setEditing } from "./shortcuts.js";
 import { renderRecent, setKnownNames } from "./recent.js";
 import { initBackground, setDim } from "./background.js";
 import { initPanel, openPanel } from "./panel.js";
@@ -58,7 +58,6 @@ function refreshRecent() {
   });
 }
 
-let lastQuickBar = settings.get().quickBar;
 settings.onChange((s) => {
   applyTheme(s.theme, s.accent);
   document.body.dataset.layout = LAYOUTS[s.layout] ? s.layout : "classic";
@@ -71,10 +70,6 @@ settings.onChange((s) => {
   redrawClock();
   updateSearch(s);
   setDim(s.bgDim);
-  if (s.quickBar !== lastQuickBar) {
-    lastQuickBar = s.quickBar;
-    refreshShortcuts(); // moves that category between the grid and the top bar
-  }
   refreshRecent();
 });
 

@@ -4,7 +4,6 @@ A personal new tab page for Brave (works in any Chromium browser). It includes:
 - a clock, search bar, themes, layouts and a custom background
 - shortcut categories you can collapse, open all at once, reorder and import from bookmarks
 - a "Recently used" row from your history (named from page titles), with pin and hide
-- an optional quick links bar: any category shown as small icons at the top
 - online status dots, keyboard shortcuts and automatic backups
 
 ## Install / reload

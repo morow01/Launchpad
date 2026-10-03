@@ -1,8 +1,7 @@
 // Custom shortcut categories: add / edit / remove tiles, add / rename / delete
 // categories, and drag tiles to reorder them or move them between categories.
 
-import * as settings from "./settings.js";
-import { makeTile, makeIcon, siteName, cleanTitle, CLOSE_ICON } from "./tiles.js";
+import { makeTile, siteName, cleanTitle, CLOSE_ICON } from "./tiles.js";
 import { imageFileToIcon } from "./icons.js";
 import { recordVisit } from "./recent.js";
 import { notifyChanged, notifyRendered } from "./events.js";
@@ -225,11 +224,6 @@ export function resetShortcuts() {
   setShortcuts(clone(DEFAULT_CATEGORIES));
 }
 
-/** Redraws the categories (e.g. after the quick links bar setting changes). */
-export function refreshShortcuts() {
-  if (!drag && !catDrag && !external) render();
-}
-
 export function isEditing() {
   return editing;
 }
@@ -249,16 +243,12 @@ export function setEditing(on) {
 function render() {
   categoriesEl.replaceChildren();
   categoriesEl.classList.toggle("editing", editing);
-  const barName = settings.get().quickBar;
 
   categories.forEach((cat, ci) => {
     if (!editing && cat.items.length === 0) return;
-    // The quick links bar category only shows at the top (and here in edit mode, to edit it)
-    const isBar = !!barName && cat.name === barName;
-    if (isBar && !editing) return;
 
     const section = document.createElement("section");
-    section.className = "category" + (isBar ? " is-quickbar" : "");
+    section.className = "category";
 
     const head = document.createElement("div");
     head.className = "cat-head";
@@ -288,13 +278,7 @@ function render() {
       title.value = cat.name;
       title.maxLength = 30;
       title.setAttribute("aria-label", "Category name");
-      title.addEventListener("input", () => {
-        const wasBar = settings.get().quickBar && settings.get().quickBar === cat.name;
-        cat.name = title.value;
-        save();
-        if (wasBar) settings.set({ quickBar: cat.name }); // keep the quick links bar on this category
-        else fillQuickBarSelect();
-      });
+      title.addEventListener("input", () => { cat.name = title.value; save(); });
       title.addEventListener("keydown", (e) => { if (e.key === "Enter") title.blur(); });
       // ✓ appears while renaming, as a clear "done" action (the name saves as you type)
       const ok = document.createElement("button");
@@ -317,13 +301,6 @@ function render() {
       addBtn.textContent = "+ Add";
       addBtn.addEventListener("click", () => openDialog(ci, null));
       head.append(title, ok, addBtn, del);
-      if (isBar) {
-        const badge = document.createElement("span");
-        badge.className = "cat-badge";
-        badge.textContent = "Quick links bar";
-        badge.title = "Shown as small icons at the top of the page (Settings › Shortcuts)";
-        title.after(badge);
-      }
     } else {
       // Click the name to collapse / expand the category
       const toggle = document.createElement("button");
@@ -400,79 +377,7 @@ function render() {
     categoriesEl.append(section);
   });
 
-  renderQuickBar();
-  fillQuickBarSelect();
   notifyRendered();
-}
-
-// ---- Quick links bar: one category as small icons at the top of the page ----
-
-const quickBar = document.getElementById("quickBar");
-const quickBarSelect = document.getElementById("quickBarSelect");
-
-export function renderQuickBar() {
-  const name = settings.get().quickBar;
-  const ci = name ? categories.findIndex((c) => c.name === name) : -1;
-  const cat = categories[ci];
-  hideQuickTip();
-  quickBar.replaceChildren();
-  quickBar.hidden = !cat || !cat.items.length;
-  document.body.classList.toggle("has-quickbar", !quickBar.hidden);
-  if (quickBar.hidden) return;
-
-  cat.items.forEach((s, i) => {
-    const a = document.createElement("a");
-    a.className = "ql";
-    a.href = s.url;
-    a.draggable = false;
-    a.setAttribute("aria-label", s.name);
-    a.append(makeIcon(s));
-    a.addEventListener("mouseenter", () => showQuickTip(a, s.name));
-    a.addEventListener("focus", () => showQuickTip(a, s.name));
-    a.addEventListener("mouseleave", hideQuickTip);
-    a.addEventListener("blur", hideQuickTip);
-    a.addEventListener("click", () => recordVisit(s));
-    a.addEventListener("contextmenu", (e) => {
-      e.preventDefault();
-      showTileMenu(e, a, ci, i);
-    });
-    onLongPress(a, () => openDialog(ci, i));
-    quickBar.append(a);
-  });
-}
-
-let quickTip = null;
-let quickTipTimer = null;
-
-function showQuickTip(el, text) {
-  hideQuickTip();
-  quickTipTimer = setTimeout(() => {
-    const r = el.getBoundingClientRect();
-    quickTip = document.createElement("div");
-    quickTip.className = "ql-tip";
-    quickTip.textContent = text;
-    quickTip.style.left = r.left + r.width / 2 + "px";
-    quickTip.style.top = r.bottom + 8 + "px";
-    document.body.append(quickTip);
-  }, 250);
-}
-
-function hideQuickTip() {
-  clearTimeout(quickTipTimer);
-  quickTip?.remove();
-  quickTip = null;
-}
-
-/** Keeps the "Quick links bar" dropdown in Settings in step with the category names. */
-function fillQuickBarSelect() {
-  if (!quickBarSelect) return;
-  const current = settings.get().quickBar;
-  const names = categories.map((c) => c.name).filter(Boolean);
-  quickBarSelect.replaceChildren(
-    new Option("Off", ""),
-    ...names.map((n) => new Option(n, n))
-  );
-  quickBarSelect.value = names.includes(current) ? current : "";
 }
 
 function deleteCategory(ci) {
