@@ -10,6 +10,7 @@
 import * as settings from "./settings.js";
 import { getShortcuts, setShortcuts, DEFAULT_CATEGORIES } from "./shortcuts.js";
 import { getBackgroundBlob, setBackgroundBlob } from "./background.js";
+import { toast } from "./menu.js";
 
 const FOLDER = "NewTab Backup";
 const META_KEY = "newtab.backupMeta";        // { hash, time }
@@ -233,14 +234,7 @@ export function updateStatus() {
     (time ? `Last backup: ${ago(time)}.` : "No backup yet.");
 }
 
-export function toast(message) {
-  const t = document.createElement("div");
-  t.className = "toast";
-  t.textContent = message;
-  document.body.append(t);
-  setTimeout(() => t.classList.add("out"), 2200);
-  setTimeout(() => t.remove(), 2600);
-}
+export { toast }; // lives in menu.js; re-exported for older imports
 
 // ---- "Restore from backup?" welcome banner on a fresh start ----
 

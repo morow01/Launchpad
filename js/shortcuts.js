@@ -5,6 +5,7 @@ import { makeTile, siteName, cleanTitle, CLOSE_ICON } from "./tiles.js";
 import { imageFileToIcon } from "./icons.js";
 import { recordVisit } from "./recent.js";
 import { notifyChanged, notifyRendered } from "./events.js";
+import { showMenu, menuPoint, onLongPress, openInNewTab, copyLink, toast } from "./menu.js";
 
 const CHEVRON_ICON = '<svg class="chev" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 4.5l3 3 3-3"/></svg>';
 const OPEN_ALL_ICON =
@@ -32,7 +33,6 @@ const addCategoryWrap = document.getElementById("addCategoryWrap");
 const addCategoryBtn = document.getElementById("addCategory");
 const newCategoryForm = document.getElementById("newCategoryForm");
 const newCategoryName = document.getElementById("newCategoryName");
-const dropHint = document.getElementById("dropHint");
 const editBar = document.getElementById("editBar");
 const editInline = document.getElementById("editInline");
 const dialog = document.getElementById("shortcutDialog");
@@ -121,6 +121,39 @@ function flashTile(ci, index) {
   );
 }
 
+// ---- Right-click menu on a tile ----
+
+function showTileMenu(e, tile, ci, i) {
+  const s = categories[ci].items[i];
+  showMenu(...menuPoint(e, tile), [
+    { icon: "✎", label: "Edit…", onClick: () => openDialog(ci, i) },
+    { icon: "↗", label: "Open in new tab", onClick: () => openInNewTab(s.url) },
+    { icon: "⧉", label: "Copy link", onClick: () => copyLink(s.url) },
+    "-",
+    { icon: "⠿", label: "Edit all shortcuts", onClick: () => setEditing(true) },
+    { icon: "🗑", label: "Remove", danger: true, onClick: () => removeWithUndo(ci, i) },
+  ], s.name);
+}
+
+function removeWithUndo(ci, i) {
+  const cat = categories[ci];
+  const [removed] = cat.items.splice(i, 1);
+  save();
+  render();
+  toast(`Removed ${removed.name}`, {
+    action: {
+      label: "Undo",
+      onClick: () => {
+        const target = categories.includes(cat) ? cat : categories[0];
+        target.items.splice(Math.min(i, target.items.length), 0, removed);
+        save();
+        render();
+        flashTile(categories.indexOf(target), target.items.indexOf(removed));
+      },
+    },
+  });
+}
+
 const EASE = "cubic-bezier(.2, .8, .2, 1)";
 
 /** Folds a category up or down with an animation (no full redraw, so it stays smooth). */
@@ -200,7 +233,7 @@ export function setEditing(on) {
   editBar.hidden = !on;
   editInline.hidden = on;
   addCategoryWrap.hidden = !on;
-  dropHint.hidden = !on;
+  document.body.classList.toggle("editing-shortcuts", on);
   closeNewCategoryForm();
   render();
 }
@@ -313,6 +346,13 @@ function render() {
         if (!suppressClick) openDialog(ci, i);
       });
       tile.addEventListener("pointerdown", (e) => onPointerDown(e, tile));
+      // Outside edit mode: right-click for a menu, press and hold to edit
+      tile.addEventListener("contextmenu", (e) => {
+        if (editing) return;
+        e.preventDefault();
+        showTileMenu(e, tile, ci, i);
+      });
+      onLongPress(tile, () => openDialog(ci, i), { enabled: () => !editing });
       tiles.append(tile);
     });
 
@@ -515,7 +555,7 @@ function onPointerUp() {
 /** Runs a DOM change, then animates tiles and headings from their old positions to their new ones. */
 function animateReflow(change) {
   const items = [...categoriesEl.querySelectorAll(".tile, .tile-placeholder, .cat-head")];
-  items.push(addCategoryWrap, dropHint, editInline);
+  items.push(addCategoryWrap, editInline);
   const before = new Map(items.map((el) => [el, el.getBoundingClientRect()]));
   change();
   for (const el of items) {
@@ -787,7 +827,6 @@ export function initShortcuts() {
     try { setDialogIcon(await imageFileToIcon(file)); } catch (err) { alert(err.message); }
   });
   initLinkDrop();
-  dropHint.hidden = true;
 
   dialog.addEventListener("close", () => {
     if (dialog.returnValue !== "save" || !dialogTarget) return;

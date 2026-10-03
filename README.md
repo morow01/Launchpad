@@ -67,6 +67,7 @@ js/shortcuts.js    Categories: add/edit/remove, collapse, open all, animated dra
 js/recent.js       "Recently used" row: history, pin to category, hide
 js/bookmarks.js    Import a bookmarks folder as a category
 js/keys.js         Keyboard shortcuts and the 1–9 number badges
+js/menu.js         Right-click menus, press-and-hold, toasts (with Undo)
 js/closed.js       "Recently closed" tabs button and list
 js/suggest.js      Type to filter: dropdown of matching shortcuts, bookmarks and history
 js/weather.js      Weather from Open-Meteo (no key needed) + its settings section

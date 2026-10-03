@@ -58,14 +58,16 @@
             <button type="button" id="newCategoryCancel">Cancel</button>
           </form>
         </div>
-        <p id="dropHint" class="drop-hint">Tip: drag bookmarks or links onto a category to add them</p>
         <button id="editInline" class="edit-link" type="button">✎ Edit shortcuts</button>
       </div>
     </section>
   </main>
 
   <div id="editBar" class="edit-bar" hidden>
-    <span>Click a tile to edit · drag to reorder</span>
+    <span class="edit-bar-text">
+      <span>Click a tile to edit · drag to reorder</span>
+      <small>Tip: drag bookmarks or links onto a category to add them</small>
+    </span>
     <button id="editDone" type="button" class="primary">Done</button>
   </div>
 
@@ -186,6 +188,7 @@
 
       <section>
         <h3>Shortcuts</h3>
+        <p class="note" style="margin-top: 0">Right-click a shortcut for options, or press and hold it to edit.</p>
         <div class="row">
           <button id="editShortcuts" type="button">Edit shortcuts</button>
           <button type="button" data-action="import-bookmarks">Import bookmarks folder</button>

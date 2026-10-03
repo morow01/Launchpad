@@ -6,6 +6,7 @@
 // or hidden from the list (eye button).
 
 import { makeTile, siteName } from "./tiles.js";
+import { showMenu, menuPoint, onLongPress, openInNewTab, copyLink } from "./menu.js";
 
 const CLICKS_KEY = "newtab.recentClicks";
 const LOOKBACK_DAYS = 30;
@@ -171,6 +172,24 @@ export async function renderRecent(opts) {
       })
     );
     tile.append(actions);
+
+    // Right-click (or press and hold) for the same actions as a menu
+    const hide = () =>
+      tile.animate([{ opacity: 1, transform: "none" }, { opacity: 0, transform: "scale(.8)" }], { duration: 180 })
+        .finished.then(() => opts.onHide(hostOf(s.url)));
+    const showActions = (e) =>
+      showMenu(...menuPoint(e, tile), [
+        { icon: "📌", label: "Pin to a category…", onClick: () => showPinMenu(tile, opts.categories, (ci, newName) => opts.onPin(s, ci, newName)) },
+        { icon: "↗", label: "Open in new tab", onClick: () => openInNewTab(s.url) },
+        { icon: "⧉", label: "Copy link", onClick: () => copyLink(s.url) },
+        "-",
+        { icon: "🚫", label: "Hide from Recently used", onClick: hide },
+      ], s.name);
+    tile.addEventListener("contextmenu", (e) => {
+      e.preventDefault();
+      showActions(e);
+    });
+    onLongPress(tile, showActions);
     return tile;
   });
 
