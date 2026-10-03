@@ -3,7 +3,8 @@
 A personal new tab page for Brave (works in any Chromium browser). It includes:
 - a clock, search bar, themes, layouts and a custom background
 - shortcut categories you can collapse, open all at once, reorder and import from bookmarks
-- a "Recently used" row from your history, with pin and hide
+- a "Recently used" row from your history (named from page titles), with pin and hide
+- an optional quick links bar: any category shown as small icons at the top
 - online status dots, keyboard shortcuts and automatic backups
 
 ## Install / reload
@@ -35,7 +36,11 @@ private Gist (`launchpad-sync.json`) in your GitHub account:
 
 Changes upload a few seconds after you make them. Every new tab checks for changes from other PCs, and
 the newest change wins. The token is stored only on each PC. It is never saved in settings, backups,
-exports or the Gist. Background images don't sync.
+exports or the Gist.
+
+The background image syncs through a second private Gist (`launchpad-background.txt`), so the main
+sync file stays small. It's shrunk to at most 2560px on the longest side and only uploads when it changes.
+You can turn this off with **Sync the background image too**.
 
 ## Project layout
 ```

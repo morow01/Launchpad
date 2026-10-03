@@ -21,6 +21,9 @@
     <button id="restoreDismiss" type="button" class="banner-close" aria-label="Dismiss">No thanks</button>
   </div>
 
+  <!-- Quick links bar: one category shown as small icons at the top -->
+  <nav id="quickBar" class="quick-bar" aria-label="Quick links" hidden></nav>
+
   <main class="page">
     <section class="hero">
       <div id="time" class="time">--:--</div>
@@ -189,6 +192,9 @@
       <section>
         <h3>Shortcuts</h3>
         <p class="note" style="margin-top: 0">Right-click a shortcut for options, or press and hold it to edit.</p>
+        <label class="field"><span>Quick links bar — show a category as small icons at the top</span>
+          <select id="quickBarSelect" data-setting="quickBar" aria-label="Quick links bar category"></select>
+        </label>
         <div class="row">
           <button id="editShortcuts" type="button">Edit shortcuts</button>
           <button type="button" data-action="import-bookmarks">Import bookmarks folder</button>
@@ -225,8 +231,8 @@
       <section id="syncSettings">
         <h3>Sync between PCs</h3>
         <div id="syncOff">
-          <p class="note">Keep your shortcuts and settings the same on every PC, through a private Gist in
-            your GitHub account. (Background images don't sync.)</p>
+          <p class="note">Keep your shortcuts, settings and background the same on every PC, through private
+            Gists in your GitHub account.</p>
           <ol class="steps">
             <li><a href="https://github.com/settings/tokens/new?scopes=gist&amp;description=Launchpad%20sync"
                    target="_blank" rel="noopener">Create a GitHub token</a> — only the <b>gist</b> box ticked.
@@ -243,6 +249,7 @@
         <div id="syncOn" hidden>
           <p id="syncStatus" class="note"></p>
           <label class="field"><span>This PC's name</span><input id="syncDevice" type="text" maxlength="30"></label>
+          <label class="toggle"><span>Sync the background image too</span><input id="syncBackground" type="checkbox"></label>
           <div class="row">
             <button id="syncNow" type="button">Sync now</button>
             <a id="syncGistLink" class="link-btn" target="_blank" rel="noopener" hidden>View on GitHub</a>

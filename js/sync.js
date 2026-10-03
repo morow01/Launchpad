@@ -7,11 +7,15 @@
 
 import * as settings from "./settings.js";
 import { getShortcuts, setShortcuts } from "./shortcuts.js";
-import { hash, isUntouched, backupNow, toast } from "./backup.js";
+import { hash, isUntouched, backupNow, toast, blobToDataUrl } from "./backup.js";
+import { getBackgroundBlob, setBackgroundBlob, removeBackground } from "./background.js";
 
 const STATE_KEY = "newtab.sync";
 const FILE = "launchpad-sync.json";
 const API = "https://api.github.com";
+const BG_FILE = "launchpad-background.txt"; // background image (data URL) in a second private Gist
+const BG_MAX_SIDE = 2560;          // shrink the synced copy to this many pixels on the longest side
+const BG_MAX_CHARS = 9 * 1024 * 1024; // give up on images still bigger than this after shrinking
 const PUSH_DELAY = 3000;           // upload this long after the last change
 const CHECK_EVERY = 5 * 60 * 1000; // re-check while a tab stays open
 const MIN_PULL_GAP = 20 * 1000;    // don't re-check more often than this
@@ -90,12 +94,23 @@ async function readRemote(gist) {
 // ---- Sync logic ----
 
 function snapshot() {
-  return { settings: settings.get(), categories: getShortcuts() };
+  // background: { hash, gist } of the synced image, or null — the image itself is in its own Gist
+  return { settings: settings.get(), categories: getShortcuts(), background: state.bgRemote || null };
 }
 
 async function push({ keepalive = false } = {}) {
   clearTimeout(pushTimer);
   pushTimer = null;
+  if (!keepalive) {
+    // (skipped when the tab is closing — it goes next time). A background problem never blocks shortcuts.
+    try {
+      await uploadBackground();
+      state.bgError = "";
+    } catch (err) {
+      if (err.kind === "auth") throw err;
+      state.bgError = err.message;
+    }
+  }
   const snap = snapshot();
   const h = hash(JSON.stringify(snap));
   if (state.gistId && h === state.pushedHash) {
@@ -125,11 +140,93 @@ async function push({ keepalive = false } = {}) {
   persist();
 }
 
-function apply(remote) {
-  applying = true;
+// ---- Background image: kept in its own private Gist, so the main sync file stays small ----
+
+const syncsBackground = () => state.syncBackground !== false;
+
+/** Shrinks the image for syncing (longest side 2560px, JPEG) unless that would make it bigger. */
+async function compressForSync(blob) {
+  try {
+    const bmp = await createImageBitmap(blob);
+    const scale = Math.min(1, BG_MAX_SIDE / Math.max(bmp.width, bmp.height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(bmp.width * scale);
+    canvas.height = Math.round(bmp.height * scale);
+    canvas.getContext("2d").drawImage(bmp, 0, 0, canvas.width, canvas.height);
+    const out = await new Promise((r) => canvas.toBlob(r, "image/jpeg", 0.85));
+    return out && out.size < blob.size ? out : blob;
+  } catch {
+    return blob;
+  }
+}
+
+/** Uploads the background if it changed since the last sync. Updates state.bgRemote. */
+async function uploadBackground() {
+  if (!syncsBackground()) return;
+  const blob = await getBackgroundBlob();
+  if (!blob) {
+    // Background removed on this PC: tell the other PCs (the old image file is left alone)
+    state.bgRemote = null;
+    state.bgLocalKey = null;
+    return;
+  }
+  const key = hash(await blobToDataUrl(blob));
+  if (key === state.bgLocalKey && state.bgRemote) return; // unchanged
+
+  const small = await blobToDataUrl(await compressForSync(blob));
+  if (small.length > BG_MAX_CHARS) {
+    throw new SyncError("The background image is too large to sync (even after shrinking it). Your shortcuts still sync.", "http");
+  }
+  const files = { [BG_FILE]: { content: small } };
+  if (state.bgGistId) {
+    try {
+      await api(`/gists/${state.bgGistId}`, { method: "PATCH", body: { files } });
+    } catch (err) {
+      if (err.kind !== "missing") throw err;
+      state.bgGistId = null;
+    }
+  }
+  if (!state.bgGistId) {
+    const gist = await api("/gists", {
+      method: "POST",
+      body: { description: "Launchpad sync — background image", public: false, files },
+    });
+    state.bgGistId = gist.id;
+  }
+  state.bgRemote = { hash: hash(small), gist: state.bgGistId };
+  state.bgLocalKey = key;
+}
+
+/** Downloads another PC's background if it's different from ours. */
+async function downloadBackground(remote) {
+  if (!syncsBackground() || !("background" in remote)) return; // older sync files have no background info
+  const rb = remote.background;
+  if (!rb) {
+    if (state.bgRemote) {
+      // Removed on the other PC
+      await removeBackground();
+      state.bgRemote = null;
+      state.bgLocalKey = null;
+    }
+    return;
+  }
+  if (state.bgRemote?.hash === rb.hash) return;
+  const gist = await api(`/gists/${rb.gist}`);
+  const file = gist.files?.[BG_FILE];
+  if (!file) return;
+  const dataUrl = file.truncated ? await (await fetch(file.raw_url, { cache: "no-store" })).text() : file.content;
+  await setBackgroundBlob(await (await fetch(dataUrl)).blob());
+  state.bgRemote = rb;
+  state.bgGistId = rb.gist;
+  state.bgLocalKey = hash(dataUrl);
+}
+
+async function apply(remote) {
+  applying = true; // our own change events (settings, shortcuts, background) aren't new changes
   try {
     settings.replace(remote.settings);
     setShortcuts(remote.categories);
+    await downloadBackground(remote).catch((err) => console.warn("Sync: background", err));
   } finally {
     applying = false;
   }
@@ -167,7 +264,7 @@ async function pull() {
   }
   // Another PC changed something. Keep ours only if it's newer and not uploaded yet.
   if (state.dirty && (state.localUpdated || 0) > Date.parse(remote.updated)) return push();
-  apply(remote);
+  await apply(remote);
   toast(`Synced changes from ${remote.device || "another PC"}`);
 }
 
@@ -195,7 +292,7 @@ function onLocalChange() {
 // ---- Connect / disconnect ----
 
 async function connect(token) {
-  state = { device: state.device, token };
+  state = { device: state.device, syncBackground: state.syncBackground, token };
   persist();
   const gist = await findGist();
   if (!gist) {
@@ -220,7 +317,7 @@ async function connect(token) {
   );
   if (useRemote) {
     if (!isUntouched()) await backupNow({ force: true });
-    apply(remote);
+    await apply(remote);
     toast(`Sync is on — loaded your setup from ${remote.device || "another PC"}`);
   } else {
     state.dirty = true;
@@ -233,7 +330,7 @@ async function connect(token) {
 function disconnect() {
   if (!confirm("Stop syncing this PC? Your shortcuts stay here, and the data on GitHub isn't deleted.")) return;
   clearTimeout(pushTimer);
-  state = { device: state.device };
+  state = { device: state.device, syncBackground: state.syncBackground };
   persist();
 }
 
@@ -255,8 +352,11 @@ function renderStatus() {
   const error = document.getElementById("syncError");
   off.hidden = connected();
   on.hidden = !connected();
-  error.hidden = !state.error;
-  error.textContent = state.error ? "⚠️ " + state.error : "";
+  const problem = state.error || (connected() && syncsBackground() ? state.bgError : "");
+  error.hidden = !problem;
+  error.textContent = problem ? "⚠️ " + problem : "";
+  const bgToggle = document.getElementById("syncBackground");
+  if (bgToggle) bgToggle.checked = syncsBackground();
   if (connected()) {
     const parts = [];
     if (state.dirty) parts.push("Uploading changes…");
@@ -287,7 +387,7 @@ export function initSync() {
       await connect(token);
       tokenInput.value = "";
     } catch (err) {
-      state = { device: state.device, error: err.message };
+      state = { device: state.device, syncBackground: state.syncBackground, error: err.message };
       persist();
     } finally {
       button.disabled = false;
@@ -302,6 +402,17 @@ export function initSync() {
     persist();
     // Re-upload so other PCs show the new name ("changes from Laptop")
     if (connected() && state.gistId) {
+      state.pushedHash = "";
+      run(push);
+    }
+  });
+
+  document.getElementById("syncBackground").addEventListener("change", (e) => {
+    state.syncBackground = e.target.checked;
+    state.bgError = "";
+    if (state.syncBackground) state.bgLocalKey = null; // upload the current background now
+    persist();
+    if (connected() && state.syncBackground) {
       state.pushedHash = "";
       run(push);
     }

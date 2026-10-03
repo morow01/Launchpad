@@ -28,7 +28,7 @@ function writeMeta(meta) {
   try { localStorage.setItem(META_KEY, JSON.stringify(meta)); } catch {}
 }
 
-function blobToDataUrl(blob) {
+export function blobToDataUrl(blob) {
   return new Promise((resolve, reject) => {
     const r = new FileReader();
     r.onload = () => resolve(r.result);

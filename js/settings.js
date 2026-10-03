@@ -12,6 +12,7 @@ export const DEFAULTS = {
   accent: "",             // custom highlight colour (#rrggbb); "" = the theme's own
   tileSize: "normal",     // "small" | "normal" | "large"
   tileLabels: true,       // show names under tile icons (off = icon-only tiles)
+  quickBar: "",           // name of the category shown as the quick links bar at the top ("" = off)
   show: { clock: true, date: true, weather: true, greeting: true, search: true, recent: true, shortcuts: true, closed: true },
   weather: null,          // { name, lat, lon } — the place for the weather, null = not set up yet
   weatherUnit: /^en-(US|LR|MM)$/.test(navigator.language) ? "f" : "c",

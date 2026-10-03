@@ -44,7 +44,11 @@ export function setDim(percent) {
   bgEl.style.setProperty("--dim", percent / 100);
 }
 
+// Bumped on every change, so a slow initial load can't overwrite a newer change (e.g. from sync)
+let changes = 0;
+
 export async function removeBackground() {
+  changes++;
   showBg(null);
   try { await clearBg(); } catch {}
   notifyChanged();
@@ -57,6 +61,7 @@ export async function getBackgroundBlob() {
 
 /** Sets and saves a new background image (used by upload and restore). */
 export async function setBackgroundBlob(blob) {
+  changes++;
   showBg(blob);
   try { await saveBg(blob); } catch (err) { alert("Couldn't save the background: " + err.message); }
   notifyChanged();
@@ -73,5 +78,6 @@ export function initBackground() {
 
   bgRemove.addEventListener("click", removeBackground);
 
-  getBg().then((blob) => { if (blob) showBg(blob); }).catch(() => {});
+  const seen = changes;
+  getBg().then((blob) => { if (blob && changes === seen) showBg(blob); }).catch(() => {});
 }

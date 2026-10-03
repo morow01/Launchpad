@@ -31,11 +31,67 @@ export function setKnownNames(categories) {
   for (const c of categories) for (const s of c.items) knownNames.set(hostOf(s.url), s.name);
 }
 
-function nameFor(host) {
-  return knownNames.get(host) || siteName(host);
+// ---- Naming: use the site's name from its page titles, not just the address ----
+// "Inbox (3) - you@gmail.com - Gmail" → "Gmail", "(12) Cat video - YouTube" → "YouTube",
+// "weather - Google Search" → "Google Search". Falls back to the address ("Bbc").
+
+const NOT_A_NAME = new Set(["www", "com", "net", "org", "co", "uk", "ie", "de", "io", "app", "html", "php"]);
+const squash = (s) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+
+/**
+ * The part of a page title that names the site: { name, strong } where strong means it
+ * matches the address. Returns null if there's no candidate.
+ */
+function titleName(title, host) {
+  if (!title) return null;
+  const parts = title
+    .replace(/^\(\d+\+?\)\s*/, "")              // "(3) Inbox" → unread counts
+    .split(/\s+[-|·–—•»]\s+|:\s+/)
+    .map((p) => p.replace(/\(\d+\+?\)$/, "").trim())
+    .filter((p) => p && !p.includes("@") && p.length <= 40 && !/^https?:/i.test(p));
+  if (!parts.length) return null;
+
+  const labels = host.split(".").filter((l) => l.length >= 3 && !NOT_A_NAME.has(l));
+  // A part that matches the address ("YouTube" ↔ youtube.com, "Gmail" ↔ mail.google.com)
+  const match = parts.find((p) => {
+    const sp = squash(p);
+    return sp.length >= 3 && labels.some((l) => sp.includes(l) || (l.includes(sp) && sp.length >= 4));
+  });
+  if (match) return { name: match, strong: true };
+  // Otherwise the last part is often the site name ("Page – Site") — a weak guess
+  const guess = parts[parts.length - 1];
+  return guess.length <= 24 ? { name: guess, strong: false } : null;
+}
+
+function shorten(name) {
+  return name.length > 22 ? name.slice(0, 21).trim() + "…" : name;
+}
+
+/**
+ * Picks the name this site's page titles agree on. A name that matches the address counts
+ * fully; a guess only wins if at least two titles agree on it. Otherwise: the address name.
+ */
+function nameFor(host, titles = []) {
+  if (knownNames.has(host)) return knownNames.get(host);
+  const votes = new Map();
+  for (const t of titles) {
+    const n = titleName(t, host);
+    if (n) votes.set(n.name, (votes.get(n.name) || 0) + (n.strong ? 2 : 1));
+  }
+  const [best, score] = [...votes].sort((a, b) => b[1] - a[1])[0] || [];
+  return shorten(best && score >= 2 ? best : siteName(host));
 }
 
 function uniqueSites(entries, count, skip) {
+  // Gather a few page titles per site first, so the name can be chosen from them
+  const titles = new Map();
+  for (const { url, title } of entries) {
+    if (!title) continue;
+    const host = hostOf(url);
+    const list = titles.get(host) || titles.set(host, []).get(host);
+    if (list.length < 8) list.push(title);
+  }
+
   const seen = new Set(skip);
   const sites = [];
   for (const { url } of entries) {
@@ -43,7 +99,7 @@ function uniqueSites(entries, count, skip) {
     try { u = new URL(url); } catch { continue; }
     if (!/^https?:$/.test(u.protocol) || seen.has(u.hostname)) continue;
     seen.add(u.hostname);
-    sites.push({ name: nameFor(u.hostname), url: u.origin });
+    sites.push({ name: nameFor(u.hostname, titles.get(u.hostname)), url: u.origin });
     if (sites.length >= count) break;
   }
   return sites;

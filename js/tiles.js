@@ -28,6 +28,37 @@ export function cleanTitle(title) {
 }
 
 /**
+ * The best icon for a shortcut. Shows the first letter until the icon is found
+ * (instant if it's cached), then swaps itself for the image.
+ */
+export function makeIcon(s) {
+  const letter = document.createElement("div");
+  letter.className = "letter";
+  letter.textContent = (s.name[0] || "?").toUpperCase();
+
+  const host = hostOf(s.url);
+  const img = document.createElement("img");
+  img.alt = "";
+  img.draggable = false;
+
+  const cached = cachedIcon(s, host);
+  if (cached) {
+    img.src = cached;
+    img.onerror = () => {
+      img.replaceWith(letter);
+      if (!s.icon) forgetIcon(host); // stale cache entry — look again next time
+    };
+    return img;
+  }
+  resolveIcon(s, host).then((src) => {
+    if (!src) return;
+    img.src = src;
+    img.onload = () => letter.replaceWith(img);
+  });
+  return letter;
+}
+
+/**
  * @param {{name: string, url: string, icon?: string}} s
  * @param {{onRemove?: () => void, monitor?: boolean}} [opts]
  */
@@ -38,36 +69,10 @@ export function makeTile(s, opts = {}) {
   a.title = s.url;
   a.draggable = false;
 
-  const letter = document.createElement("div");
-  letter.className = "letter";
-  letter.textContent = (s.name[0] || "?").toUpperCase();
-
-  const host = hostOf(s.url);
-  const img = document.createElement("img");
-  img.alt = "";
-  img.draggable = false;
-
   const label = document.createElement("span");
   label.className = "label";
   label.textContent = s.name;
-
-  // Show the letter until the best icon is found (instant if it's cached)
-  const cached = cachedIcon(s, host);
-  if (cached) {
-    img.src = cached;
-    img.onerror = () => {
-      img.replaceWith(letter);
-      if (!s.icon) forgetIcon(host); // stale cache entry — look again next time
-    };
-    a.append(img, label);
-  } else {
-    a.append(letter, label);
-    resolveIcon(s, host).then((src) => {
-      if (!src) return;
-      img.src = src;
-      img.onload = () => letter.replaceWith(img);
-    });
-  }
+  a.append(makeIcon(s), label);
 
   if (opts.monitor) {
     const dot = document.createElement("span");
