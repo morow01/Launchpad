@@ -56,6 +56,7 @@
   border: 2px dashed color-mix(in srgb, var(--muted) 45%, transparent);
   opacity: 0; pointer-events: none; transition: opacity .15s, background .15s, color .15s, border-color .15s;
 }
+.search-drop small { margin-left: 6px; font-size: 12px; font-weight: 400; opacity: .8; }
 body.link-dragging .search-drop { opacity: 1; background: var(--p-bg); }
 /* Hide what's underneath (placeholder text, icon) so only the hint shows */
 body.link-dragging .search > svg, body.link-dragging #q { visibility: hidden; }

@@ -775,24 +775,35 @@ function overSearchBar(x, y) {
   return x >= r.left - 8 && x <= r.right + 8 && y >= r.top - 8 && y <= r.bottom + 8;
 }
 
-/** A link dropped on the search bar opens in a new tab; dropped text is searched for in a new tab. */
-function openDropped(dt) {
+/**
+ * A link dropped on the search bar opens in a new tab; dropped text is searched for in a new
+ * tab. The tab opens in the background (you stay on Launchpad) unless Ctrl is held.
+ */
+async function openDropped(dt, switchTo) {
   const link = parseDroppedLink(dt);
-  if (link) return openTab(link.url);
+  if (link) {
+    openTab(link.url, switchTo);
+    if (!switchTo) toast(`Opened ${link.name} in a new tab`);
+    return;
+  }
 
   const text = dt.getData("text/plain").trim();
   if (!text) return;
   const engine = ENGINES[settings.get().searchEngine] || ENGINES.default;
   if (!engine.url && globalThis.chrome?.search?.query) {
-    chrome.search.query({ text, disposition: "NEW_TAB" }); // Brave's own default engine
+    // Brave's own default engine. It always opens the new tab in front, so come back after.
+    const here = await Promise.resolve(chrome.tabs?.getCurrent?.()).catch(() => null);
+    await Promise.resolve(chrome.search.query({ text, disposition: "NEW_TAB" })).catch(() => {});
+    if (!switchTo && here) chrome.tabs.update(here.id, { active: true }).catch(() => {});
   } else {
-    openTab((engine.url || ENGINES.brave.url) + encodeURIComponent(text));
+    openTab((engine.url || ENGINES.brave.url) + encodeURIComponent(text), switchTo);
   }
+  if (!switchTo) toast(`Searching for “${text.length > 30 ? text.slice(0, 29) + "…" : text}” in a new tab`);
 }
 
-/** Opens a page in a new tab and switches to it. */
-function openTab(url) {
-  if (globalThis.chrome?.tabs?.create) chrome.tabs.create({ url, active: true });
+/** Opens a page in a new tab — in the background unless `switchTo`. */
+function openTab(url, switchTo) {
+  if (globalThis.chrome?.tabs?.create) chrome.tabs.create({ url, active: !!switchTo });
   else window.open(url, "_blank");
 }
 
@@ -841,7 +852,7 @@ function initLinkDrop() {
     }
     if (external.toSearch) {
       endExternalDrag();
-      return openDropped(e.dataTransfer);
+      return openDropped(e.dataTransfer, e.ctrlKey || e.metaKey); // Ctrl = switch to the new tab
     }
     if (pageDrag && !external.over) return endExternalDrag(); // a Recently used tile dropped off the categories: cancel
     const item = parseDroppedLink(e.dataTransfer);
