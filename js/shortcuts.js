@@ -293,17 +293,7 @@ function render() {
       del.title = "Delete category";
       del.innerHTML = CLOSE_ICON;
       del.addEventListener("click", () => deleteCategory(ci));
-      // "Add shortcut" lives in the heading (so tiles don't shift when edit mode starts), set apart
-      // after a divider so it doesn't read as part of the category name: ⠿ NAME ✓ ✕ | ⊞ Add shortcut
-      const addBtn = document.createElement("button");
-      addBtn.type = "button";
-      addBtn.className = "cat-add";
-      addBtn.title = `Add a shortcut to ${cat.name}`;
-      addBtn.innerHTML =
-        '<svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="2" width="12" height="12" rx="3"/><path d="M8 5.5v5M5.5 8h5"/></svg>' +
-        "<span>Add shortcut</span>";
-      addBtn.addEventListener("click", () => openDialog(ci, null));
-      head.append(title, ok, del, addBtn);
+      head.append(title, ok, del);
     } else {
       // Click the name to collapse / expand the category
       const toggle = document.createElement("button");
@@ -366,12 +356,14 @@ function render() {
       tiles.append(tile);
     });
 
-    if (editing && cat.items.length === 0) {
-      // Empty category: a big Add tile (nothing to shift), which is also the drop target
+    if (editing) {
+      // A faded, dashed "+" tile after the shortcuts (see placeAddTiles: it never nudges them)
       const add = document.createElement("button");
       add.type = "button";
       add.className = "tile add";
-      add.innerHTML = '<div class="letter">+</div><span class="label">Add shortcut</span>';
+      add.title = `Add a shortcut to ${cat.name}`;
+      add.setAttribute("aria-label", add.title);
+      add.innerHTML = '<span class="plus" aria-hidden="true">+</span>';
       add.addEventListener("click", () => openDialog(ci, null));
       tiles.append(add);
     }
@@ -380,8 +372,41 @@ function render() {
     categoriesEl.append(section);
   });
 
+  if (editing) placeAddTiles();
   notifyRendered();
 }
+
+/**
+ * Puts each category's "+" tile right after its last shortcut without moving the others.
+ * Rows are centred, so an extra tile on the last row would re-centre (nudge) that row. If the
+ * last row has room, the "+" is laid over the empty space beside it instead; if the row is
+ * full, it simply starts the next row (nothing moves sideways then).
+ */
+function placeAddTiles() {
+  for (const tiles of categoriesEl.querySelectorAll(".tiles")) {
+    const add = tiles.querySelector(".tile.add");
+    const shortcuts = [...tiles.querySelectorAll(".tile:not(.add)")];
+    if (!add) continue;
+    add.classList.remove("floating");
+    add.style.left = add.style.top = add.style.height = "";
+    const last = shortcuts[shortcuts.length - 1];
+    if (!last || add.offsetTop !== last.offsetTop) continue; // empty category, or it wrapped: fine as is
+
+    // It fits on the last row: take it out of the row and lay it beside the last shortcut
+    add.classList.add("floating");
+    const gap = parseFloat(getComputedStyle(tiles).columnGap) || 14;
+    add.style.left = last.offsetLeft + last.offsetWidth + gap + "px";
+    add.style.top = last.offsetTop + "px";
+    add.style.height = last.offsetHeight + "px";
+  }
+}
+
+let placeTimer;
+window.addEventListener("resize", () => {
+  if (!editing) return;
+  clearTimeout(placeTimer);
+  placeTimer = setTimeout(placeAddTiles, 80);
+});
 
 function deleteCategory(ci) {
   const cat = categories[ci];
@@ -502,13 +527,18 @@ function placePlaceholderIn(placeholder, tiles, x, y) {
 
   // Find the slot under the pointer, using untransformed layout boxes
   const box = tiles.getBoundingClientRect();
-  const px = x - box.left + tiles.offsetLeft;
-  const py = y - box.top + tiles.offsetTop;
-  const slot = [...tiles.children].find(
-    (el) =>
-      px >= el.offsetLeft && px <= el.offsetLeft + el.offsetWidth &&
-      py >= el.offsetTop && py <= el.offsetTop + el.offsetHeight
-  );
+  const px = x - box.left;
+  const py = y - box.top;
+  // Layout position of a tile inside this row (offsetLeft is relative to the row itself in
+  // edit mode, where the row is positioned, and to the page otherwise)
+  const pos = (el) =>
+    el.offsetParent === tiles
+      ? [el.offsetLeft, el.offsetTop]
+      : [el.offsetLeft - tiles.offsetLeft, el.offsetTop - tiles.offsetTop];
+  const slot = [...tiles.children].find((el) => {
+    const [l, t] = pos(el);
+    return px >= l && px <= l + el.offsetWidth && py >= t && py <= t + el.offsetHeight;
+  });
 
   if (slot === placeholder) return; // already there
   if (!slot || slot.classList.contains("add")) {

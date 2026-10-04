@@ -19,6 +19,8 @@
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
 html, body { min-height: 100%; margin: 0; }
+/* Keep room for the scrollbar, so the centred page doesn't jump sideways when it appears */
+html { scrollbar-gutter: stable; }
 body {
   font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
   color: var(--text);
@@ -115,8 +117,26 @@ body[data-tile-labels="off"] .tile img { max-width: calc(var(--icon) * 1.6); }
 .tiles.editing .tile { animation: wiggle .3s ease-in-out infinite alternate; cursor: pointer; }
 .tiles.editing .tile:not(.add) { cursor: grab; touch-action: none; user-select: none; }
 @keyframes wiggle { from { transform: rotate(-1deg); } to { transform: rotate(1deg); } }
-.tile.add { cursor: pointer; font-size: 13px; }
-.tile.add .letter { background: transparent; border: 2px dashed var(--muted); color: var(--muted); }
+/* The "+" tile in edit mode: an empty, faded, dashed placeholder for a new shortcut */
+.tiles.editing { position: relative; } /* so a floating "+" tile can sit beside the last shortcut */
+.tile.add {
+  cursor: pointer; justify-content: center;
+  min-height: calc(var(--icon) + 46px * var(--tile-scale));
+  background: transparent; backdrop-filter: none;
+  border: 2px dashed color-mix(in srgb, var(--muted) 45%, transparent);
+  color: var(--muted); opacity: .7;
+  animation: none !important; /* no wiggle */
+  transition: opacity .15s, border-color .15s, color .15s, background .15s;
+}
+.tile.add .plus { font-size: calc(26px * var(--tile-scale)); font-weight: 300; line-height: 1; }
+.tile.add:hover, .tile.add:focus-visible {
+  opacity: 1; transform: none; outline: none;
+  border-color: var(--accent); color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+.tile.add.floating { position: absolute; margin: 0; }
+/* While tiles are being dragged around, the floating "+" would be in the wrong place */
+.reordering .tile.add.floating, body.link-dragging .tile.add.floating { visibility: hidden; }
 
 /* ---- Categories ---- */
 .category { margin-bottom: 26px; }
@@ -187,21 +207,6 @@ body[data-tile-labels="off"] .tile img { max-width: calc(var(--icon) * 1.6); }
 .cat-lifted .tile, .cat-dropping .tile { animation: none !important; }
 .cat-lifted .cat-head, .cat-dropping .cat-head { justify-content: center; }
 
-/* "Add shortcut" in an edit-mode heading: separated from the name by a thin divider */
-.cat-add {
-  position: relative; margin-left: 14px;
-  display: inline-flex; align-items: center; gap: 5px;
-  height: 22px; padding: 0 10px 0 7px; border-radius: 11px; cursor: pointer;
-  border: 1px solid transparent; background: transparent; color: var(--muted);
-  font: inherit; font-size: 12px; font-weight: 500; white-space: nowrap;
-  text-transform: none; letter-spacing: 0;
-}
-.cat-add::before {
-  content: ""; position: absolute; left: -9px; top: 4px; bottom: 4px; width: 1px;
-  background: color-mix(in srgb, var(--muted) 40%, transparent);
-}
-.cat-add svg { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; }
-.cat-add:hover { color: #fff; background: var(--accent); border-color: var(--accent); }
 
 .cat-save {
   display: none;
