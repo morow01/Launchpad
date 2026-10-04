@@ -47,5 +47,25 @@
 .sg-row b { font-weight: 700; color: var(--accent); }
 .sg-search .sg-title { font-weight: 500; }
 
+/* While a link is dragged: the search bar offers "Drop here to open the page" */
+.search-drop {
+  position: absolute; inset: 0; border-radius: inherit;
+  display: grid; place-items: center;
+  font-size: 14px; font-weight: 500; color: var(--muted);
+  background: var(--card); backdrop-filter: blur(10px);
+  border: 2px dashed color-mix(in srgb, var(--muted) 45%, transparent);
+  opacity: 0; pointer-events: none; transition: opacity .15s, background .15s, color .15s, border-color .15s;
+}
+body.link-dragging .search-drop { opacity: 1; background: var(--p-bg); }
+/* Hide what's underneath (placeholder text, icon) so only the hint shows */
+body.link-dragging .search > svg, body.link-dragging #q { visibility: hidden; }
+body.link-to-search .search-drop {
+  color: #fff; border: 2px solid var(--accent);
+  background: var(--accent);
+}
+/* Over the search bar the link will open, so hide the "add a shortcut" slot meanwhile */
+body.link-to-search .tile-placeholder { display: none; }
+body.link-to-search .category:not(.recent) .tiles { outline-color: transparent !important; }
+
 /* Layout tweaks */
 body[data-layout="split"] .suggest { text-align: left; }

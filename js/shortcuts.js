@@ -761,7 +761,30 @@ function endExternalDrag() {
   if (!external) return;
   external.placeholder.remove();
   external = null;
-  document.body.classList.remove("link-dragging", "link-over-category");
+  document.body.classList.remove("link-dragging", "link-over-category", "link-to-search");
+}
+
+const searchForm = document.getElementById("search");
+
+/** Is (x, y) over the search bar (with a little margin), and is the search bar showing? */
+function overSearchBar(x, y) {
+  if (searchForm.hidden) return false;
+  const r = searchForm.getBoundingClientRect();
+  return x >= r.left - 8 && x <= r.right + 8 && y >= r.top - 8 && y <= r.bottom + 8;
+}
+
+/** A link dropped on the search bar opens; dropped text is searched for. */
+function openDropped(dt) {
+  const link = parseDroppedLink(dt);
+  if (link) {
+    location.href = link.url;
+    return;
+  }
+  const text = dt.getData("text/plain").trim();
+  if (!text) return;
+  const input = document.getElementById("q");
+  input.value = text;
+  searchForm.requestSubmit();
 }
 
 function initLinkDrop() {
@@ -778,11 +801,14 @@ function initLinkDrop() {
   document.addEventListener("dragover", (e) => {
     if (!isLinkDrag(e)) return;
     e.preventDefault();
-    e.dataTransfer.dropEffect = "copy";
     clearTimeout(leaveTimer);
     if (!external) startExternalDrag();
-    external.over = placePlaceholder(external.placeholder, e.clientX, e.clientY);
-    document.body.classList.toggle("link-over-category", external.over);
+    // Over the search bar = open the page (like dropping on the address bar); elsewhere = add a shortcut
+    external.toSearch = overSearchBar(e.clientX, e.clientY);
+    e.dataTransfer.dropEffect = external.toSearch ? "link" : "copy";
+    document.body.classList.toggle("link-to-search", external.toSearch);
+    if (!external.toSearch) external.over = placePlaceholder(external.placeholder, e.clientX, e.clientY);
+    document.body.classList.toggle("link-over-category", !external.toSearch && external.over);
   });
 
   // Leaving the window: Brave doesn't say where a drag from another window went (no
@@ -801,7 +827,12 @@ function initLinkDrop() {
     if (!external) {
       // The drop arrived right after a "leave": place it where it was dropped
       startExternalDrag();
+      external.toSearch = overSearchBar(e.clientX, e.clientY);
       external.over = placePlaceholder(external.placeholder, e.clientX, e.clientY);
+    }
+    if (external.toSearch) {
+      endExternalDrag();
+      return openDropped(e.dataTransfer);
     }
     if (pageDrag && !external.over) return endExternalDrag(); // a Recently used tile dropped off the categories: cancel
     const item = parseDroppedLink(e.dataTransfer);
