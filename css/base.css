@@ -214,7 +214,8 @@ body[data-tile-labels="off"] .tile img { max-width: calc(var(--icon) * 1.6); }
   border: 0; background: var(--accent); color: #fff;
   font-size: 13px; font-weight: 600; cursor: pointer;
 }
-.cat-head:focus-within .cat-save { display: inline-block; }
+/* Only while the category name is being typed (not when the ✕ or the ⠿ handle has focus) */
+.cat-name:focus + .cat-save, .cat-save:focus { display: inline-block; }
 
 .new-category {
   display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 8px;
