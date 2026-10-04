@@ -136,6 +136,35 @@ select option:checked { background-color: var(--accent); color: #fff; }
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* About & other PCs */
+.panel .version-line { display: flex; align-items: baseline; justify-content: space-between; margin: 0 0 4px; font-size: 14px; }
+.update-status { margin: 0 0 10px; font-size: 13px; color: var(--p-muted); }
+.update-status.ok { color: #30a46c; }
+.update-status.warn { color: #f59e0b; }
+.panel #reloadExt { margin-bottom: 12px; }
+.panel .cmd-label { margin: 12px 0 6px; font-size: 13px; color: var(--p-muted); }
+.panel .cmd { display: flex; gap: 6px; align-items: stretch; }
+.panel .cmd code {
+  flex: 1; min-width: 0; padding: 7px 9px; border-radius: 8px;
+  background: var(--p-card); border: 1px solid var(--p-border);
+  font: 12px/1.4 Consolas, "Cascadia Mono", monospace; color: var(--p-text);
+  white-space: nowrap; overflow-x: auto; scrollbar-width: thin;
+}
+.panel .steps .link-btn { font-size: 13px; }
+.panel .note a { color: var(--accent); }
+
+/* Your PCs (in the Sync section) */
+.devices { margin: 10px 0 4px; display: flex; flex-direction: column; gap: 4px; }
+.devices:empty { display: none; }
+.device {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 6px 10px; border-radius: 8px; background: var(--p-card); font-size: 13px;
+}
+.device small { color: var(--p-muted); }
+.device .ver { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.device .ver.ok { color: #30a46c; }
+.device .ver.old { color: #f59e0b; }
+
 /* Sync section */
 .panel .steps { margin: 0 0 8px; padding-left: 20px; font-size: 13px; line-height: 1.5; }
 .panel .steps li { margin-bottom: 4px; }

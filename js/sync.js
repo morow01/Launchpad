@@ -7,8 +7,9 @@
 
 import * as settings from "./settings.js";
 import { getShortcuts, setShortcuts } from "./shortcuts.js";
-import { hash, isUntouched, backupNow, toast, blobToDataUrl } from "./backup.js";
+import { hash, isUntouched, toast, blobToDataUrl } from "./backup.js";
 import { getBackgroundBlob, setBackgroundBlob, removeBackground } from "./background.js";
+import { VERSION, compareVersions, latestVersionCached } from "./about.js";
 
 const STATE_KEY = "newtab.sync";
 const FILE = "launchpad-sync.json";
@@ -119,7 +120,7 @@ async function push({ keepalive = false } = {}) {
     return persist();
   }
   const updated = new Date(state.localUpdated || Date.now()).toISOString();
-  const content = JSON.stringify({ app: "launchpad", version: 1, updated, device: state.device, ...snap });
+  const content = JSON.stringify({ app: "launchpad", version: 1, updated, device: state.device, devices: deviceList(), ...snap });
   const files = { [FILE]: { content } };
 
   if (state.gistId) {
@@ -138,6 +139,7 @@ async function push({ keepalive = false } = {}) {
     state.gistId = gist.id;
   }
   Object.assign(state, { lastRemote: updated, pushedHash: h, dirty: false, lastSync: Date.now(), lastFrom: state.device, error: "" });
+  state.versionReported = VERSION;
   lastAction = { kind: "uploaded" };
   persist();
 }
@@ -257,10 +259,13 @@ async function pull() {
   }
   const remote = await readRemote(gist);
   if (!remote) return push();
+  if (remote.devices) state.devices = remote.devices;
+  // First sync after this PC was updated: report the new version even if nothing else changed
+  if (state.versionReported !== VERSION) state.pushedHash = "";
 
   if (remote.updated === state.lastRemote) {
     // Nothing new from other PCs
-    if (state.dirty) return push();
+    if (state.dirty || state.versionReported !== VERSION) return push();
     state.lastSync = Date.now();
     state.error = "";
     lastAction = { kind: "uptodate" };
@@ -354,13 +359,27 @@ async function connect(token) {
   const when = new Date(remote.updated).toLocaleString();
   const useRemote = isUntouched() || confirm(
     `Found Launchpad data synced from “${remote.device || "another PC"}” (${when}).\n\n` +
-    "OK — use it on this PC (this PC's shortcuts and settings are backed up first, then replaced)\n" +
+    "OK — use it on this PC (replaces this PC's shortcuts and settings; you can undo right after)\n" +
     "Cancel — keep this PC's setup and upload it instead"
   );
   if (useRemote) {
-    if (!isUntouched()) await backupNow({ force: true });
+    // Remember this PC's own setup so the switch can be undone
+    const before = isUntouched() ? null : JSON.parse(JSON.stringify({ settings: settings.get(), categories: getShortcuts() }));
     await apply(remote);
-    toast(`Sync is on — loaded your setup from ${remote.device || "another PC"}`);
+    const message = `Sync is on — loaded your setup from ${remote.device || "another PC"}`;
+    if (!before) return toast(message);
+    toast(message, {
+      duration: 10000,
+      action: {
+        label: "Undo",
+        onClick: () => {
+          // Putting this PC's setup back is a normal change, so it then syncs to the other PCs
+          settings.replace(before.settings);
+          setShortcuts(before.categories);
+          toast("This PC's setup is back — it's now the synced one");
+        },
+      },
+    });
   } else {
     state.dirty = true;
     state.localUpdated = Date.now();
@@ -374,6 +393,54 @@ function disconnect() {
   clearTimeout(pushTimer);
   state = { device: state.device, syncBackground: state.syncBackground };
   persist();
+}
+
+// ---- Your PCs: which version each one runs ----
+
+const FORGET_AFTER = 60 * 864e5; // drop PCs that haven't synced for 60 days
+
+/** The PCs list to upload: everyone we know of, plus this PC with its current version. */
+function deviceList() {
+  const list = { ...(state.devices || {}) };
+  if (state.oldDevice) delete list[state.oldDevice];
+  state.oldDevice = null;
+  for (const [name, d] of Object.entries(list)) if (Date.now() - (d.seen || 0) > FORGET_AFTER) delete list[name];
+  list[state.device] = { version: VERSION, seen: Date.now() };
+  state.devices = list;
+  return list;
+}
+
+function renderDevices() {
+  const box = document.getElementById("syncDevices");
+  if (!box) return;
+  const list = Object.entries(state.devices || {});
+  box.replaceChildren();
+  if (!list.length) return;
+  const latest = latestVersionCached();
+  const heading = document.createElement("small");
+  heading.textContent = "Your PCs";
+  box.append(heading);
+  list.sort(([a], [b]) => (a === state.device ? -1 : b === state.device ? 1 : a.localeCompare(b)));
+  for (const [name, d] of list) {
+    const row = document.createElement("div");
+    row.className = "device";
+    const who = document.createElement("span");
+    who.textContent = name;
+    if (name === state.device) {
+      const me = document.createElement("small");
+      me.textContent = " (this PC)";
+      who.append(me);
+    }
+    const ver = document.createElement("span");
+    ver.className = "ver";
+    const old = latest && compareVersions(d.version, latest) < 0;
+    ver.textContent = old ? `${d.version} — update available` : latest ? `${d.version} ✓` : d.version;
+    if (old) ver.classList.add("old");
+    else if (latest) ver.classList.add("ok");
+    ver.title = `Last synced ${new Date(d.seen).toLocaleString()}`;
+    row.append(who, ver);
+    box.append(row);
+  }
 }
 
 // ---- Settings panel ----
@@ -409,6 +476,7 @@ function renderStatus() {
     const link = document.getElementById("syncGistLink");
     link.hidden = !state.gistId;
     if (state.gistId) link.href = `https://gist.github.com/${state.gistId}`;
+    renderDevices();
     const device = document.getElementById("syncDevice");
     if (document.activeElement !== device) device.value = state.device;
   }
@@ -440,7 +508,9 @@ export function initSync() {
   document.getElementById("syncNow").addEventListener("click", (e) => syncNow(e.currentTarget));
   document.getElementById("syncDisconnect").addEventListener("click", disconnect);
   document.getElementById("syncDevice").addEventListener("change", (e) => {
-    state.device = e.target.value.trim() || state.device;
+    const renamed = e.target.value.trim();
+    if (renamed && renamed !== state.device) state.oldDevice = state.device;
+    state.device = renamed || state.device;
     persist();
     // Re-upload so other PCs show the new name ("changes from Laptop")
     if (connected() && state.gistId) {

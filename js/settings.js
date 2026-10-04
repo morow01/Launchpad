@@ -19,7 +19,6 @@ export const DEFAULTS = {
   recentHidden: [],         // hostnames hidden from "Recently used"
   recentSkipShortcuts: true, // don't repeat sites that are already in your shortcuts
   showKeyHints: true,       // show 1–9 key numbers on the first nine shortcuts
-  autoBackup: true,        // save a backup file to Downloads/NewTab Backup when things change
   clock24: true,
   showSeconds: false,
   name: "",

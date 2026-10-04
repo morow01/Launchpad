@@ -15,9 +15,10 @@
   <div id="bg" class="bg" aria-hidden="true"></div>
 
   <!-- Shown on a fresh start (new install, moved folder, cleared data) -->
-  <div id="restoreBanner" class="banner" role="region" aria-label="Restore" hidden>
-    <span>👋 Starting fresh? If you have a backup, bring your shortcuts back.</span>
-    <button id="restoreBtn" type="button" class="primary">Restore from backup</button>
+  <div id="restoreBanner" class="banner" role="region" aria-label="Get your shortcuts" hidden>
+    <span>👋 Starting fresh? Bring your shortcuts over from another PC.</span>
+    <button id="restoreSync" type="button" class="primary">Set up sync</button>
+    <button id="restoreBtn" type="button">Import a file</button>
     <button id="restoreDismiss" type="button" class="banner-close" aria-label="Dismiss">No thanks</button>
   </div>
 
@@ -244,6 +245,7 @@
           <p id="syncStatus" class="note"></p>
           <label class="field"><span>This PC's name</span><input id="syncDevice" type="text" maxlength="30"></label>
           <label class="toggle"><span>Sync the background image too</span><input id="syncBackground" type="checkbox"></label>
+          <div id="syncDevices" class="devices" aria-label="Your PCs"></div>
           <div class="row">
             <button id="syncNow" type="button">Sync now</button>
             <a id="syncGistLink" class="link-btn" target="_blank" rel="noopener" hidden>View on GitHub</a>
@@ -254,18 +256,41 @@
       </section>
 
       <section>
-        <h3>Backup</h3>
-        <label class="toggle"><span>Automatic backup</span><input type="checkbox" data-setting="autoBackup"></label>
-        <p id="backupStatus" class="note"></p>
+        <h3>Export &amp; import</h3>
         <div class="row">
-          <button id="backupNow" type="button">Back up now</button>
           <button id="exportBtn" type="button">Export…</button>
-          <button id="importBtn" type="button">Restore…</button>
+          <button id="importBtn" type="button">Import…</button>
           <input id="importFile" type="file" accept="application/json,.json" hidden>
         </div>
-        <p class="note">Backups include your shortcuts, settings and background image. Automatic backups keep a
-          copy for each weekday, so you can go back up to a week.</p>
+        <p class="note"><b>Export</b> saves your shortcuts, settings and background to a file you can keep
+          anywhere. <b>Import</b> loads such a file back. Sync already keeps your PCs safe and in step — this is
+          for keeping your own copy.</p>
         <button id="resetAll" type="button" class="danger">Reset all settings</button>
+      </section>
+
+      <section id="aboutSettings">
+        <h3>About &amp; other PCs</h3>
+        <p class="version-line">
+          <strong>Launchpad <span id="appVersion"></span></strong>
+          <button id="checkUpdates" type="button" class="link-btn">Check now</button>
+        </p>
+        <p id="updateStatus" class="update-status"></p>
+        <button id="reloadExt" type="button" class="primary" hidden>↻ Reload Launchpad</button>
+
+        <p class="cmd-label">Install on another PC — paste into PowerShell:</p>
+        <div class="cmd"><code id="cmdInstall"></code><button id="copyInstall" type="button">Copy</button></div>
+        <ol class="steps">
+          <li><button id="openExtensions" type="button" class="link-btn">Open the extensions page</button> →
+            turn on <b>Developer mode</b> → <b>Load unpacked</b> → pick the <b>Launchpad</b> folder in your user folder.</li>
+          <li>Open a new tab → Settings → <b>Sync between PCs</b> → paste your token → <b>Connect</b>.</li>
+        </ol>
+        <p class="note">No Git on that PC? <a id="zipLink" target="_blank" rel="noopener">Download the ZIP</a>
+          and extract it to a folder you'll keep.</p>
+
+        <p class="cmd-label">Update a PC to the newest version:</p>
+        <div class="cmd"><code id="cmdUpdate"></code><button id="copyUpdate" type="button">Copy</button></div>
+        <p class="note">Then reload Launchpad — this section shows a button for it. Your shortcuts aren't affected.
+          <a id="repoLink" target="_blank" rel="noopener">Launchpad on GitHub</a></p>
       </section>
     </div>
   </aside>

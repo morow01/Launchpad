@@ -4,27 +4,26 @@ A personal new tab page for Brave (works in any Chromium browser). It includes:
 - a clock, search bar, themes, layouts and a custom background
 - shortcut categories you can collapse, open all at once, reorder and import from bookmarks
 - a "Recently used" row from your history (named from page titles), with pin and hide
-- online status dots, keyboard shortcuts and automatic backups
+- online status dots, keyboard shortcuts, sync between PCs, and export / import
 
 ## Install / reload
 1. Go to `brave://extensions` and turn on **Developer mode**.
 2. Click **Load unpacked** and select this folder.
 3. After editing any file, click the reload icon on the extension card, then open a new tab.
 
-## Your data and backups
+## Your data
 Shortcuts and settings are stored inside Brave, tied to this extension. Brave identifies an
 unpacked extension by its folder path, so **moving or renaming this folder starts it fresh**.
+With Sync on, just reconnect and everything comes back.
 
-With **Settings → Backup → Automatic backup** on (the default), a copy is saved to
-`Downloads/NewTab Backup/` at most once a day, and only when something changed. It writes one file per
-weekday (`newtab-backup-<Weekday>.json`), so you can go back up to a week.
+**Settings → Export & import** saves your shortcuts, settings and background to a file
+(`launchpad-<date>.json`), or loads one back. A fresh install offers to set up sync or import a file.
 
-If Brave's **Ask where to save each file before downloading** setting (`brave://settings/downloads`) is on,
-Brave shows a save dialog for each backup. Turn that setting off for silent backups, or turn automatic
-backup off. If you close the dialog, Launchpad won't ask again until the next day.
-
-Backups include the background image. After a move or reinstall, the page offers
-**Restore from backup**. You can also restore any time with **Settings → Backup → Restore…**.
+## Updates and other PCs
+**Settings → About & other PCs** shows the version and checks GitHub for a newer one. It also has
+copy buttons for the install and update commands. After `git pull` it offers a one-click
+**Reload Launchpad**. **Sync → Your PCs** lists which version each PC runs.
+Bump `version` in `manifest.json` with every change, so the check can tell versions apart.
 
 ## Sync between PCs
 **Settings → Sync between PCs** keeps shortcuts and settings identical on every PC through a
@@ -48,7 +47,6 @@ manifest.json      Extension manifest. Permissions:
                      history      - "Recently used"
                      favicon      - Brave's icon cache
                      bookmarks    - bookmarks folder import
-                     downloads(+.ui) - automatic backup files
                      sessions, tabs - "Recently closed" tabs (tabs = their titles and addresses)
                      geolocation  - "Use my location" for the weather
 newtab.html        Page markup, including the settings panel and dialogs
@@ -60,8 +58,9 @@ css/suggest.css    Search suggestions dropdown
 css/weather.css    Weather line, forecast pop-up and weather settings
 js/main.js         Entry point: wires the modules together and applies settings
 js/settings.js     Settings store (localStorage). Defaults live here
-js/events.js       Page-wide events: newtab:changed (drives backup), newtab:rendered
-js/backup.js       Automatic backup, export, restore, "restore from backup" banner
+js/events.js       Page-wide events: newtab:changed (drives sync), newtab:rendered
+js/backup.js       Export / import to a file, and the welcome banner on a fresh start
+js/about.js        Version, update check, reload button, install / update commands
 js/sync.js         Sync between PCs via a private GitHub Gist (token stays on each PC)
 js/themes.js       Theme colour definitions
 js/layouts.js      Layout list and the mini previews shown in the panel
@@ -89,7 +88,7 @@ js/panel.js        Settings panel UI
 - **New layout:** add an entry to `LAYOUTS` in `js/layouts.js`, then add a `body[data-layout="id"]` block in `css/layouts.css`.
 - **New on/off or text option:** add a default to `DEFAULTS` in `js/settings.js`. Then add an input to the panel in
   `newtab.html` with `data-setting="key"` (or `data-show="key"` for a show/hide toggle). The panel binds it
-  automatically. React to the value in the `settings.onChange` callback in `js/main.js`. Backups pick it up automatically.
+  automatically. React to the value in the `settings.onChange` callback in `js/main.js`. Sync and export pick it up automatically.
 - **New widget:** add its element to `newtab.html`, add a `show` default in `settings.js`, map it in `WIDGETS` in `main.js`, and add a toggle in the panel.
 
 Tip: to debug the page, right-click it and choose **Inspect**.
