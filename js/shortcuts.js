@@ -765,25 +765,45 @@ function endExternalDrag() {
 }
 
 function initLinkDrop() {
+  // Drags that start on this page (a Recently used tile) vs. from elsewhere (bookmarks bar,
+  // another Brave window). Only page drags must land exactly on a category to count.
+  let pageDrag = false;
+  let leaveTimer = null;
+  document.addEventListener("dragstart", () => { pageDrag = true; }, true);
+  document.addEventListener("dragend", () => {
+    pageDrag = false;
+    endExternalDrag(); // a page drag that was dropped elsewhere or cancelled
+  });
+
   document.addEventListener("dragover", (e) => {
     if (!isLinkDrag(e)) return;
     e.preventDefault();
     e.dataTransfer.dropEffect = "copy";
+    clearTimeout(leaveTimer);
     if (!external) startExternalDrag();
     external.over = placePlaceholder(external.placeholder, e.clientX, e.clientY);
     document.body.classList.toggle("link-over-category", external.over);
   });
 
-  document.addEventListener("dragleave", (e) => {
-    if (external && !e.relatedTarget) endExternalDrag(); // left the window
+  // Leaving the window: Brave doesn't say where a drag from another window went (no
+  // relatedTarget), but while it's over the page "dragover" fires many times a second —
+  // so if none follows shortly after a "dragleave", the drag has left.
+  document.addEventListener("dragleave", () => {
+    if (!external) return;
+    clearTimeout(leaveTimer);
+    leaveTimer = setTimeout(endExternalDrag, 150);
   });
-  // A drag that started on this page (e.g. a Recently used tile) and was cancelled
-  document.addEventListener("dragend", endExternalDrag);
 
   document.addEventListener("drop", (e) => {
-    if (!external) return;
-    e.preventDefault();
-    if (!external.over) return endExternalDrag(); // dropped outside the categories: cancel
+    if (!isLinkDrag(e) && !external) return;
+    e.preventDefault(); // never let the browser open the dropped link instead
+    clearTimeout(leaveTimer);
+    if (!external) {
+      // The drop arrived right after a "leave": place it where it was dropped
+      startExternalDrag();
+      external.over = placePlaceholder(external.placeholder, e.clientX, e.clientY);
+    }
+    if (pageDrag && !external.over) return endExternalDrag(); // a Recently used tile dropped off the categories: cancel
     const item = parseDroppedLink(e.dataTransfer);
     const { placeholder } = external;
     const tiles = placeholder.parentElement;
