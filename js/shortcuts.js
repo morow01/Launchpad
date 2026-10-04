@@ -293,14 +293,17 @@ function render() {
       del.title = "Delete category";
       del.innerHTML = CLOSE_ICON;
       del.addEventListener("click", () => deleteCategory(ci));
-      // "+ Add" lives in the heading, so the tiles don't shift when edit mode starts
+      // "Add shortcut" lives in the heading (so tiles don't shift when edit mode starts), set apart
+      // after a divider so it doesn't read as part of the category name: ⠿ NAME ✓ ✕ | ⊞ Add shortcut
       const addBtn = document.createElement("button");
       addBtn.type = "button";
       addBtn.className = "cat-add";
       addBtn.title = `Add a shortcut to ${cat.name}`;
-      addBtn.textContent = "+ Add";
+      addBtn.innerHTML =
+        '<svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="2" width="12" height="12" rx="3"/><path d="M8 5.5v5M5.5 8h5"/></svg>' +
+        "<span>Add shortcut</span>";
       addBtn.addEventListener("click", () => openDialog(ci, null));
-      head.append(title, ok, addBtn, del);
+      head.append(title, ok, del, addBtn);
     } else {
       // Click the name to collapse / expand the category
       const toggle = document.createElement("button");
@@ -368,7 +371,7 @@ function render() {
       const add = document.createElement("button");
       add.type = "button";
       add.className = "tile add";
-      add.innerHTML = '<div class="letter">+</div><span class="label">Add</span>';
+      add.innerHTML = '<div class="letter">+</div><span class="label">Add shortcut</span>';
       add.addEventListener("click", () => openDialog(ci, null));
       tiles.append(add);
     }

@@ -187,13 +187,21 @@ body[data-tile-labels="off"] .tile img { max-width: calc(var(--icon) * 1.6); }
 .cat-lifted .tile, .cat-dropping .tile { animation: none !important; }
 .cat-lifted .cat-head, .cat-dropping .cat-head { justify-content: center; }
 
+/* "Add shortcut" in an edit-mode heading: separated from the name by a thin divider */
 .cat-add {
-  height: 22px; padding: 0 10px; border-radius: 11px; cursor: pointer;
-  border: 1px dashed color-mix(in srgb, var(--muted) 60%, transparent);
-  background: transparent; color: var(--muted);
-  font: inherit; font-size: 12px; font-weight: 600; white-space: nowrap;
+  position: relative; margin-left: 14px;
+  display: inline-flex; align-items: center; gap: 5px;
+  height: 22px; padding: 0 10px 0 7px; border-radius: 11px; cursor: pointer;
+  border: 1px solid transparent; background: transparent; color: var(--muted);
+  font: inherit; font-size: 12px; font-weight: 500; white-space: nowrap;
+  text-transform: none; letter-spacing: 0;
 }
-.cat-add:hover { color: #fff; background: var(--accent); border: 1px solid var(--accent); }
+.cat-add::before {
+  content: ""; position: absolute; left: -9px; top: 4px; bottom: 4px; width: 1px;
+  background: color-mix(in srgb, var(--muted) 40%, transparent);
+}
+.cat-add svg { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; }
+.cat-add:hover { color: #fff; background: var(--accent); border-color: var(--accent); }
 
 .cat-save {
   display: none;
