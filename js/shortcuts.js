@@ -1,6 +1,8 @@
 // Custom shortcut categories: add / edit / remove tiles, add / rename / delete
 // categories, and drag tiles to reorder them or move them between categories.
 
+import * as settings from "./settings.js";
+import { ENGINES } from "./search.js";
 import { makeTile, siteName, cleanTitle, CLOSE_ICON } from "./tiles.js";
 import { imageFileToIcon } from "./icons.js";
 import { recordVisit } from "./recent.js";
@@ -773,18 +775,25 @@ function overSearchBar(x, y) {
   return x >= r.left - 8 && x <= r.right + 8 && y >= r.top - 8 && y <= r.bottom + 8;
 }
 
-/** A link dropped on the search bar opens; dropped text is searched for. */
+/** A link dropped on the search bar opens in a new tab; dropped text is searched for in a new tab. */
 function openDropped(dt) {
   const link = parseDroppedLink(dt);
-  if (link) {
-    location.href = link.url;
-    return;
-  }
+  if (link) return openTab(link.url);
+
   const text = dt.getData("text/plain").trim();
   if (!text) return;
-  const input = document.getElementById("q");
-  input.value = text;
-  searchForm.requestSubmit();
+  const engine = ENGINES[settings.get().searchEngine] || ENGINES.default;
+  if (!engine.url && globalThis.chrome?.search?.query) {
+    chrome.search.query({ text, disposition: "NEW_TAB" }); // Brave's own default engine
+  } else {
+    openTab((engine.url || ENGINES.brave.url) + encodeURIComponent(text));
+  }
+}
+
+/** Opens a page in a new tab and switches to it. */
+function openTab(url) {
+  if (globalThis.chrome?.tabs?.create) chrome.tabs.create({ url, active: true });
+  else window.open(url, "_blank");
 }
 
 function initLinkDrop() {
