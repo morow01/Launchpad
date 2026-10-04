@@ -119,6 +119,23 @@ select option, select optgroup {
 }
 select option:checked { background-color: var(--accent); color: #fff; }
 
+/* Buttons press in when clicked, so a click looks different from a hover */
+.panel button { transition: transform .08s ease, background .15s, border-color .15s, color .15s; }
+.panel button:active:not(:disabled) { transform: scale(.95); filter: brightness(.92); }
+.panel button:disabled { cursor: default; }
+
+/* "Sync now": spinner while working, then green ✓ / red ⚠ for a moment */
+#syncNow { display: inline-flex; align-items: center; gap: 8px; min-width: 104px; justify-content: center; }
+#syncNow.busy { color: var(--p-muted); }
+#syncNow.done { background: #30a46c; border-color: #30a46c; color: #fff; }
+#syncNow.failed { background: #e5484d; border-color: #e5484d; color: #fff; }
+.spinner {
+  width: 12px; height: 12px; border-radius: 50%;
+  border: 2px solid currentColor; border-right-color: transparent;
+  animation: spin .7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
 /* Sync section */
 .panel .steps { margin: 0 0 8px; padding-left: 20px; font-size: 13px; line-height: 1.5; }
 .panel .steps li { margin-bottom: 4px; }

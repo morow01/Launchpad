@@ -18,7 +18,7 @@ const BG_MAX_SIDE = 2560;          // shrink the synced copy to this many pixels
 const BG_MAX_CHARS = 9 * 1024 * 1024; // give up on images still bigger than this after shrinking
 const PUSH_DELAY = 3000;           // upload this long after the last change
 const CHECK_EVERY = 5 * 60 * 1000; // re-check while a tab stays open
-const MIN_PULL_GAP = 20 * 1000;    // don't re-check more often than this
+const MIN_PULL_GAP = 5 * 1000;     // don't re-check more often than this
 
 // state: { token, gistId, device, lastRemote, dirty, localUpdated, pushedHash, lastSync, lastFrom, error }
 let state = {};
@@ -115,6 +115,7 @@ async function push({ keepalive = false } = {}) {
   const h = hash(JSON.stringify(snap));
   if (state.gistId && h === state.pushedHash) {
     state.dirty = false;
+    lastAction = { kind: "uptodate" };
     return persist();
   }
   const updated = new Date(state.localUpdated || Date.now()).toISOString();
@@ -137,6 +138,7 @@ async function push({ keepalive = false } = {}) {
     state.gistId = gist.id;
   }
   Object.assign(state, { lastRemote: updated, pushedHash: h, dirty: false, lastSync: Date.now(), lastFrom: state.device, error: "" });
+  lastAction = { kind: "uploaded" };
   persist();
 }
 
@@ -238,6 +240,7 @@ async function apply(remote) {
     lastFrom: remote.device || "another PC",
     error: "",
   });
+  lastAction = { kind: "downloaded", from: remote.device || "another PC" };
   persist();
 }
 
@@ -260,12 +263,51 @@ async function pull() {
     if (state.dirty) return push();
     state.lastSync = Date.now();
     state.error = "";
+    lastAction = { kind: "uptodate" };
     return persist();
   }
   // Another PC changed something. Keep ours only if it's newer and not uploaded yet.
   if (state.dirty && (state.localUpdated || 0) > Date.parse(remote.updated)) return push();
   await apply(remote);
-  toast(`Synced changes from ${remote.device || "another PC"}`);
+  if (!manualSync) toast(`Synced changes from ${remote.device || "another PC"}`);
+}
+
+// ---- "Sync now" button: spinner while working, then a clear result ----
+
+let manualSync = false;  // the button shows its own message, so skip the automatic one
+let lastAction = null;   // what the last sync did: { kind: "uploaded" | "downloaded" | "uptodate", from? }
+
+async function syncNow(button) {
+  if (button.classList.contains("busy")) return;
+  const label = button.textContent;
+  button.classList.add("busy");
+  button.disabled = true;
+  button.innerHTML = '<span class="spinner" aria-hidden="true"></span>Syncing…';
+  manualSync = true;
+  lastAction = null;
+  const started = Date.now();
+  try {
+    await run(pull); // pull also uploads this PC's changes when it has any
+  } finally {
+    manualSync = false;
+  }
+  // Keep the spinner visible briefly so a fast sync still reads as "something happened"
+  await new Promise((r) => setTimeout(r, Math.max(0, 500 - (Date.now() - started))));
+
+  const failed = !!state.error || !lastAction;
+  button.classList.remove("busy");
+  button.classList.add(failed ? "failed" : "done");
+  button.textContent = failed ? "⚠ Sync failed" : "✓ Synced";
+  if (failed) toast("Sync failed — see the message below the button");
+  else if (lastAction.kind === "uploaded") toast("Uploaded your changes — your other PCs pick them up when you switch to them");
+  else if (lastAction.kind === "downloaded") toast(`Got the latest changes from ${lastAction.from}`);
+  else toast("Already up to date");
+
+  setTimeout(() => {
+    button.classList.remove("done", "failed");
+    button.textContent = label;
+    button.disabled = false;
+  }, 2000);
 }
 
 /** Runs sync jobs one at a time and shows errors in the panel. */
@@ -395,7 +437,7 @@ export function initSync() {
     }
   });
 
-  document.getElementById("syncNow").addEventListener("click", () => run(() => (state.dirty ? push() : pull())));
+  document.getElementById("syncNow").addEventListener("click", (e) => syncNow(e.currentTarget));
   document.getElementById("syncDisconnect").addEventListener("click", disconnect);
   document.getElementById("syncDevice").addEventListener("change", (e) => {
     state.device = e.target.value.trim() || state.device;
@@ -430,6 +472,14 @@ export function initSync() {
     } else if (Date.now() - lastPull > MIN_PULL_GAP) {
       run(pull);
     }
+  });
+  // Switching between windows (e.g. your PC and a VM) doesn't hide the tab, so also react to
+  // the window losing / getting focus: upload waiting changes, then check for new ones.
+  window.addEventListener("blur", () => {
+    if (connected() && pushTimer) run(push);
+  });
+  window.addEventListener("focus", () => {
+    if (connected() && Date.now() - lastPull > MIN_PULL_GAP) run(pull);
   });
   setInterval(() => { if (connected() && !document.hidden) run(pull); }, CHECK_EVERY);
   setInterval(renderStatus, 60 * 1000);
