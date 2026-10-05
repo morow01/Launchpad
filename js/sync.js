@@ -10,6 +10,7 @@ import { getShortcuts, setShortcuts } from "./shortcuts.js";
 import { hash, isUntouched, toast, blobToDataUrl } from "./backup.js";
 import { getBackgroundBlob, setBackgroundBlob, removeBackground } from "./background.js";
 import { VERSION, compareVersions, latestVersionCached } from "./about.js";
+import { confirmDialog } from "./menu.js";
 
 const STATE_KEY = "newtab.sync";
 const FILE = "launchpad-sync.json";
@@ -357,11 +358,20 @@ async function connect(token) {
     return push();
   }
   const when = new Date(remote.updated).toLocaleString();
-  const useRemote = isUntouched() || confirm(
-    `Found Launchpad data synced from “${remote.device || "another PC"}” (${when}).\n\n` +
-    "OK — use it on this PC (replaces this PC's shortcuts and settings; you can undo right after)\n" +
-    "Cancel — keep this PC's setup and upload it instead"
-  );
+  const useRemote = isUntouched() || await confirmDialog({
+    title: `Use the setup from “${remote.device || "another PC"}”?`,
+    message: `Synced data was found (last changed ${when}). Use it on this PC — you can undo right after — ` +
+      "or keep this PC's shortcuts and settings and make them the synced ones.",
+    confirm: "Use synced setup",
+    cancel: "Keep this PC's",
+  });
+  if (useRemote === null) {
+    // Closed without choosing: don't connect yet
+    state = { device: state.device, syncBackground: state.syncBackground };
+    persist();
+    toast("Sync isn't connected yet — connect again when you're ready");
+    return;
+  }
   if (useRemote) {
     // Remember this PC's own setup so the switch can be undone
     const before = isUntouched() ? null : JSON.parse(JSON.stringify({ settings: settings.get(), categories: getShortcuts() }));
@@ -388,8 +398,14 @@ async function connect(token) {
   }
 }
 
-function disconnect() {
-  if (!confirm("Stop syncing this PC? Your shortcuts stay here, and the data on GitHub isn't deleted.")) return;
+async function disconnect() {
+  const ok = await confirmDialog({
+    title: "Stop syncing this PC?",
+    message: "Your shortcuts stay here, and the synced data on GitHub isn't deleted.",
+    confirm: "Disconnect",
+    tone: "danger",
+  });
+  if (!ok) return;
   clearTimeout(pushTimer);
   state = { device: state.device, syncBackground: state.syncBackground };
   persist();

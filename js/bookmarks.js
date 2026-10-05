@@ -2,6 +2,7 @@
 
 import { siteName, cleanTitle } from "./tiles.js";
 import { importCategory } from "./shortcuts.js";
+import { alertDialog } from "./menu.js";
 
 const dialog = document.getElementById("bookmarkDialog");
 const list = document.getElementById("bookmarkFolders");
@@ -44,7 +45,7 @@ function buildList(tree) {
         b.addEventListener("click", () => {
           const items = links(child, includeSub.checked).map(toItem);
           if (!items.length) {
-            alert("That folder has no links directly inside it. Tick “Include subfolders” to import those.");
+            alertDialog("No links directly in that folder", "Tick “Include links in subfolders” to import the ones in its subfolders.");
             return;
           }
           dialog.close();
@@ -61,7 +62,7 @@ function buildList(tree) {
 
 export async function openBookmarkImport() {
   if (!globalThis.chrome?.bookmarks) {
-    alert("Bookmark import only works when the page runs as the Brave extension.");
+    alertDialog("Bookmark import isn't available here", "It works when Launchpad runs as the Brave extension.");
     return;
   }
   buildList(await chrome.bookmarks.getTree());

@@ -198,7 +198,7 @@ select option:checked { background-color: var(--accent); color: #fff; }
   flex: 1; min-width: 0; padding: 7px 9px; border-radius: 8px;
   background: var(--p-card); border: 1px solid var(--p-border);
   font: 12px/1.4 Consolas, "Cascadia Mono", monospace; color: var(--p-text);
-  white-space: nowrap; overflow-x: auto; scrollbar-width: thin;
+  white-space: nowrap; overflow-x: auto;
 }
 .panel .steps .link-btn { font-size: 13px; }
 .panel .note a { color: var(--accent); }

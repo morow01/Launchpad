@@ -101,6 +101,77 @@ export function copyLink(url) {
   );
 }
 
+// ---- Themed dialogs (instead of the browser's plain confirm / alert boxes) ----
+
+const DIALOG_ICONS = {
+  danger: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg>',
+  question: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1 .9-1 1.7M12 17h.01"/></svg>',
+  info: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>',
+};
+
+/**
+ * Asks a question in a small themed window. Resolves true (confirm button), false (cancel
+ * button) or null (Esc / a click outside: no decision). null and false both read as "no".
+ * @param {{title: string, message?: string, confirm?: string, cancel?: string|null, tone?: "danger"|"question"|"info"}} o
+ *        cancel: null hides the cancel button (a plain message with just OK)
+ */
+export function confirmDialog({ title, message = "", confirm = "OK", cancel = "Cancel", tone = "question" }) {
+  return new Promise((resolve) => {
+    const d = document.createElement("dialog");
+    d.className = `confirm-dialog tone-${tone}`;
+    d.innerHTML = `
+      <div class="cd-body">
+        <div class="cd-icon">${DIALOG_ICONS[tone] || DIALOG_ICONS.question}</div>
+        <div class="cd-text"><h2></h2><p></p></div>
+      </div>
+      <div class="cd-actions"></div>`;
+    d.querySelector("h2").textContent = title;
+    const p = d.querySelector("p");
+    if (message) p.textContent = message;
+    else p.remove();
+
+    const actions = d.querySelector(".cd-actions");
+    let cancelBtn = null;
+    if (cancel !== null) {
+      cancelBtn = document.createElement("button");
+      cancelBtn.type = "button";
+      cancelBtn.textContent = cancel;
+      actions.append(cancelBtn);
+    }
+    const okBtn = document.createElement("button");
+    okBtn.type = "button";
+    okBtn.className = tone === "danger" ? "cd-danger" : "primary";
+    okBtn.textContent = confirm;
+    actions.append(okBtn);
+
+    let settled = false;
+    const done = (value) => {
+      if (settled) return;
+      settled = true;
+      d.classList.add("closing");
+      setTimeout(() => { d.close(); d.remove(); }, 120);
+      resolve(value);
+    };
+    okBtn.addEventListener("click", () => done(true));
+    cancelBtn?.addEventListener("click", () => done(false));
+    const dismiss = () => done(cancel === null ? true : null);
+    d.addEventListener("cancel", (e) => { e.preventDefault(); dismiss(); }); // Esc
+    d.addEventListener("click", (e) => { if (e.target === d) dismiss(); }); // outside the box
+    d.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && document.activeElement !== cancelBtn) { e.preventDefault(); done(true); }
+    });
+
+    document.body.append(d);
+    d.showModal();
+    okBtn.focus(); // Enter confirms, Esc cancels
+  });
+}
+
+/** A themed message with just an OK button. */
+export function alertDialog(title, message = "") {
+  return confirmDialog({ title, message, confirm: "OK", cancel: null, tone: "info" });
+}
+
 // ---- Toast (small notice at the bottom), optionally with an action like "Undo" ----
 
 let toastEl = null;

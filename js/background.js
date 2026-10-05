@@ -1,6 +1,7 @@
 // Custom background image. Stored in IndexedDB because images are too big for localStorage.
 
 import { notifyChanged } from "./events.js";
+import { alertDialog } from "./menu.js";
 
 const bgEl = document.getElementById("bg");
 const bgFile = document.getElementById("bgFile");
@@ -63,7 +64,7 @@ export async function getBackgroundBlob() {
 export async function setBackgroundBlob(blob) {
   changes++;
   showBg(blob);
-  try { await saveBg(blob); } catch (err) { alert("Couldn't save the background: " + err.message); }
+  try { await saveBg(blob); } catch (err) { alertDialog("Couldn't save the background", err.message); }
   notifyChanged();
 }
 

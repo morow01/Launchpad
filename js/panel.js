@@ -8,6 +8,7 @@ import { LAYOUTS } from "./layouts.js";
 import { ENGINES } from "./search.js";
 import { resetShortcuts, setEditing } from "./shortcuts.js";
 import { removeBackground } from "./background.js";
+import { confirmDialog } from "./menu.js";
 
 const panel = document.getElementById("panel");
 const scrim = document.getElementById("scrim");
@@ -194,14 +195,26 @@ export function initPanel() {
     closePanel();
     setEditing(true);
   });
-  document.getElementById("resetShortcuts").addEventListener("click", () => {
-    if (confirm("Replace your shortcuts with the default set?")) resetShortcuts();
+  document.getElementById("resetShortcuts").addEventListener("click", async () => {
+    const ok = await confirmDialog({
+      title: "Start over with the default shortcuts?",
+      message: "All your categories and shortcuts are replaced with the starter set.",
+      confirm: "Reset shortcuts",
+      tone: "danger",
+    });
+    if (ok) resetShortcuts();
   });
 
   document.getElementById("unhideRecent").addEventListener("click", () => settings.set({ recentHidden: [] }));
 
-  document.getElementById("resetAll").addEventListener("click", () => {
-    if (!confirm("Reset all settings, shortcuts and the background to defaults?")) return;
+  document.getElementById("resetAll").addEventListener("click", async () => {
+    const ok = await confirmDialog({
+      title: "Reset everything?",
+      message: "All settings, shortcuts and the background go back to how they were at the start. Export first if you want a copy.",
+      confirm: "Reset everything",
+      tone: "danger",
+    });
+    if (!ok) return;
     settings.reset();
     resetShortcuts();
     removeBackground();

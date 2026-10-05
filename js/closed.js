@@ -2,6 +2,7 @@
 // and reopens one with a click. Uses Brave's own session history (chrome.sessions).
 
 import * as settings from "./settings.js";
+import { alertDialog } from "./menu.js";
 
 const MAX_ITEMS = 12;
 
@@ -83,7 +84,7 @@ async function open() {
     const restore = () => {
       close();
       Promise.resolve(chrome.sessions.restore(s.tab?.sessionId ?? s.window?.sessionId))
-        .catch((err) => alert("Couldn't reopen it: " + err.message));
+        .catch((err) => alertDialog("Couldn't reopen it", err.message));
     };
     if (s.tab) {
       // url/title need the "tabs" permission; show the tab even if Brave leaves them out

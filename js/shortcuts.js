@@ -7,7 +7,7 @@ import { makeTile, siteName, cleanTitle, CLOSE_ICON } from "./tiles.js";
 import { imageFileToIcon } from "./icons.js";
 import { recordVisit } from "./recent.js";
 import { notifyChanged, notifyRendered } from "./events.js";
-import { showMenu, menuPoint, onLongPress, openInNewTab, copyLink, toast } from "./menu.js";
+import { showMenu, menuPoint, onLongPress, openInNewTab, copyLink, toast, confirmDialog, alertDialog } from "./menu.js";
 
 const CHEVRON_ICON = '<svg class="chev" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 4.5l3 3 3-3"/></svg>';
 const OPEN_ALL_ICON =
@@ -137,7 +137,19 @@ function showTileMenu(e, tile, ci, i) {
   ], s.name);
 }
 
-function removeWithUndo(ci, i) {
+/** Asks before removing a shortcut (themed dialog). */
+function confirmRemove(ci, i) {
+  const s = categories[ci].items[i];
+  return confirmDialog({
+    title: `Delete “${s.name}”?`,
+    message: `It will be removed from ${categories[ci].name || "this category"}.`,
+    confirm: "Delete",
+    tone: "danger",
+  });
+}
+
+async function removeWithUndo(ci, i) {
+  if (!(await confirmRemove(ci, i))) return;
   const cat = categories[ci];
   const [removed] = cat.items.splice(i, 1);
   save();
@@ -207,9 +219,13 @@ function toggleCollapse(cat, section, toggle, count) {
   }
 }
 
-function openAll(cat) {
+async function openAll(cat) {
   const urls = cat.items.map((s) => s.url);
-  if (urls.length > 8 && !confirm(`Open all ${urls.length} shortcuts in new tabs?`)) return;
+  if (urls.length > 8 && !(await confirmDialog({
+    title: `Open all ${urls.length} shortcuts?`,
+    message: `Each one opens in its own background tab.`,
+    confirm: "Open all",
+  }))) return;
   for (const url of urls) {
     if (globalThis.chrome?.tabs?.create) chrome.tabs.create({ url, active: false });
     else window.open(url, "_blank");
@@ -334,11 +350,7 @@ function render() {
     cat.items.forEach((s, i) => {
       const tile = makeTile(s, {
         monitor: s.monitor,
-        onRemove: () => {
-          cat.items.splice(i, 1);
-          save();
-          render();
-        },
+        onRemove: () => removeWithUndo(ci, i),
       });
       tile.dataset.cat = ci;
       tile.dataset.index = i;
@@ -410,9 +422,17 @@ window.addEventListener("resize", () => {
   placeTimer = setTimeout(placeAddTiles, 80);
 });
 
-function deleteCategory(ci) {
+async function deleteCategory(ci) {
   const cat = categories[ci];
-  if (cat.items.length && !confirm(`Delete "${cat.name}" and its ${cat.items.length} shortcut(s)?`)) return;
+  const n = cat.items.length;
+  const ok = await confirmDialog({
+    title: `Delete the “${cat.name || "Untitled"}” category?`,
+    message: n ? `Its ${n} shortcut${n === 1 ? "" : "s"} will be deleted too.` : "It has no shortcuts in it.",
+    confirm: "Delete category",
+    tone: "danger",
+  });
+  if (!ok || !categories.includes(cat)) return;
+  ci = categories.indexOf(cat);
   categories.splice(ci, 1);
   save();
   render();
@@ -936,7 +956,7 @@ export function initShortcuts() {
     const file = iconFile.files[0];
     iconFile.value = "";
     if (!file) return;
-    try { setDialogIcon(await imageFileToIcon(file)); } catch (err) { alert(err.message); }
+    try { setDialogIcon(await imageFileToIcon(file)); } catch (err) { alertDialog("That image can't be used", err.message); }
   });
   initLinkDrop();
 

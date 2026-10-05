@@ -6,7 +6,7 @@ import * as settings from "./settings.js";
 import { getShortcuts, setShortcuts, DEFAULT_CATEGORIES } from "./shortcuts.js";
 import { getBackgroundBlob, setBackgroundBlob } from "./background.js";
 import { openPanel } from "./panel.js";
-import { toast } from "./menu.js";
+import { toast, alertDialog } from "./menu.js";
 
 const WELCOME_KEY = "newtab.welcomeDone"; // set once the welcome banner has been answered
 const DATA_KEYS = ["newtab.categories", "newtab.settings", "newtab.shortcuts"];
@@ -87,7 +87,7 @@ importFile.addEventListener("change", async () => {
     hideWelcome();
     toast("Imported — your shortcuts and settings are back");
   } catch (err) {
-    alert("Couldn't import: " + err.message);
+    alertDialog("Couldn't import that file", err.message);
   }
 });
 
