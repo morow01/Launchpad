@@ -65,3 +65,8 @@ body[data-layout="topbar"] .weather-details { left: 0; transform: none; }
   from { background: color-mix(in srgb, var(--accent) 20%, transparent); }
   to { background: transparent; }
 }
+
+/* In the settings window the town search fills its whole row */
+.setting.weather-find { gap: 8px; }
+.setting.weather-find input[type="text"] { flex: 1; width: auto; max-width: none; }
+.group > .weather-results { padding: 8px 0; border-bottom: 1px solid var(--p-border); margin: 0; }

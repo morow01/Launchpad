@@ -64,6 +64,7 @@ async function renderAbout({ force = false } = {}) {
   const status = document.getElementById("updateStatus");
   const reload = document.getElementById("reloadExt");
   document.getElementById("appVersion").textContent = VERSION;
+  document.getElementById("navVersion").textContent = VERSION;
   status.textContent = "Checking for updates…";
   status.className = "update-status";
 

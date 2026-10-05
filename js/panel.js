@@ -1,4 +1,4 @@
-// The settings panel behind the cog button.
+// The settings window behind the cog button: a sidebar of sections (tabs) and one page per section.
 // Inputs with data-setting="key" or data-show="key" are bound to settings automatically,
 // so adding a simple option only needs a new input in newtab.html and a default in settings.js.
 
@@ -13,12 +13,31 @@ const panel = document.getElementById("panel");
 const scrim = document.getElementById("scrim");
 const cog = document.getElementById("cog");
 
-/** Opens the settings panel, optionally scrolled to (and highlighting) a section by id. */
+const TAB_KEY = "newtab.settingsTab";
+
+/** Shows one section of the settings window ("look", "page", "shortcuts", "search", "sync", "about"). */
+function showTab(name) {
+  const pages = [...panel.querySelectorAll(".tab-page")];
+  if (!pages.some((p) => p.dataset.page === name)) name = pages[0].dataset.page;
+  for (const p of pages) p.hidden = p.dataset.page !== name;
+  for (const t of panel.querySelectorAll(".panel-tab")) {
+    const on = t.dataset.tab === name;
+    t.classList.toggle("on", on);
+    t.setAttribute("aria-current", on ? "page" : "false");
+  }
+  panel.querySelector(".panel-body").scrollTop = 0;
+  try { localStorage.setItem(TAB_KEY, name); } catch {}
+}
+
+/** Opens the settings window — at the last section used, or at the section holding element `sectionId`. */
 export function openPanel(sectionId) {
   panel.classList.add("open");
   scrim.classList.add("open");
   panel.setAttribute("aria-hidden", "false");
   const section = sectionId && document.getElementById(sectionId);
+  let last = null;
+  try { last = localStorage.getItem(TAB_KEY); } catch {}
+  showTab(section?.closest(".tab-page")?.dataset.page || last || "look");
   if (section) {
     section.scrollIntoView({ block: "start", behavior: "smooth" });
     section.classList.remove("flash");
@@ -59,29 +78,15 @@ function buildThemeList() {
   }
 }
 
+/** Layout picker: one compact button per layout (selection is handled by data-choice="layout"). */
 function buildLayoutList() {
   const list = document.getElementById("layoutList");
   for (const [id, l] of Object.entries(LAYOUTS)) {
     const b = document.createElement("button");
     b.type = "button";
-    b.className = "layout-card";
-    b.dataset.layout = id;
-
-    const mini = document.createElement("div");
-    mini.className = "mini";
-    for (const [x, y, w, h, accent] of l.mini) {
-      const r = document.createElement("i");
-      if (accent) r.className = "a";
-      Object.assign(r.style, { left: x + "%", top: y + "%", width: w + "%", height: h + "%" });
-      mini.append(r);
-    }
-    const title = document.createElement("strong");
-    title.textContent = l.name;
-    const desc = document.createElement("small");
-    desc.textContent = l.description;
-
-    b.append(mini, title, desc);
-    b.addEventListener("click", () => settings.set({ layout: id }));
+    b.dataset.value = id;
+    b.textContent = l.name;
+    b.title = l.description;
     list.append(b);
   }
 }
@@ -110,7 +115,7 @@ function buildEngineList() {
   for (const [id, e] of Object.entries(ENGINES)) {
     const opt = document.createElement("option");
     opt.value = id;
-    opt.textContent = id === "default" ? "Browser default (Brave settings)" : e.name;
+    opt.textContent = id === "default" ? "Browser default" : e.name;
     select.append(opt);
   }
 }
@@ -148,7 +153,6 @@ function sync(s) {
   });
   panel.querySelectorAll("[data-show]").forEach((el) => { el.checked = !!s.show[el.dataset.show]; });
   panel.querySelectorAll("[data-theme]").forEach((b) => b.setAttribute("aria-pressed", b.dataset.theme === s.theme));
-  panel.querySelectorAll("[data-layout]").forEach((b) => b.setAttribute("aria-pressed", b.dataset.layout === s.layout));
   panel.querySelectorAll("[data-choice]").forEach((group) => {
     group.querySelectorAll("button[data-value]").forEach((b) =>
       b.setAttribute("aria-pressed", String(b.dataset.value === s[group.dataset.choice]))
@@ -178,6 +182,7 @@ export function initPanel() {
   settings.onChange(sync);
 
   cog.addEventListener("click", () => (panel.classList.contains("open") ? closePanel() : openPanel()));
+  for (const t of panel.querySelectorAll(".panel-tab")) t.addEventListener("click", () => showTab(t.dataset.tab));
   document.getElementById("panelClose").addEventListener("click", closePanel);
   scrim.addEventListener("click", closePanel);
   document.addEventListener("keydown", (e) => {

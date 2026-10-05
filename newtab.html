@@ -85,217 +85,292 @@
   </button>
   <div id="scrim" class="scrim"></div>
 
-  <aside id="panel" class="panel" aria-label="Settings" aria-hidden="true">
-    <header class="panel-head">
-      <h2>Settings</h2>
-      <button id="panelClose" class="icon-btn" type="button" aria-label="Close">
+  <!-- Settings: a centred window with a sidebar of sections (js/panel.js switches them) -->
+  <div id="panel" class="panel" role="dialog" aria-modal="true" aria-label="Settings" aria-hidden="true">
+    <nav class="panel-nav" aria-label="Settings sections">
+      <div class="panel-title">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+        Settings
+      </div>
+      <button type="button" class="panel-tab" data-tab="look">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21a9 9 0 1 1 0-18c4.97 0 9 3.58 9 8 0 2.5-2 4-4.5 4H15a2 2 0 0 0-1.5 3.3c.4.5.5 1.1.2 1.7-.3.6-.9 1-1.7 1z"/><circle cx="7.5" cy="10.5" r="1"/><circle cx="12" cy="7.5" r="1"/><circle cx="16.5" cy="10.5" r="1"/></svg>
+        Appearance
+      </button>
+      <button type="button" class="panel-tab" data-tab="page">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 9h16M9 9v11"/></svg>
+        Page
+      </button>
+      <button type="button" class="panel-tab" data-tab="shortcuts">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="6" height="6" rx="1.5"/><rect x="14" y="4" width="6" height="6" rx="1.5"/><rect x="4" y="14" width="6" height="6" rx="1.5"/><path d="M17 14v6M14 17h6"/></svg>
+        Shortcuts
+      </button>
+      <button type="button" class="panel-tab" data-tab="search">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+        Search and weather
+      </button>
+      <button type="button" class="panel-tab" data-tab="sync">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14.8-4M4 5v4h4"/><path d="M4 13a8 8 0 0 0 14.8 4M20 19v-4h-4"/></svg>
+        Sync and data
+      </button>
+      <button type="button" class="panel-tab" data-tab="about">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>
+        About
+      </button>
+      <div class="panel-version">Launchpad <span id="navVersion"></span></div>
+    </nav>
+
+    <div class="panel-main">
+      <button id="panelClose" class="icon-btn panel-close" type="button" aria-label="Close">
         <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3 3l6 6M9 3l-6 6"/></svg>
       </button>
-    </header>
+      <div class="panel-body">
 
-    <div class="panel-body">
-      <section>
-        <h3>Theme</h3>
-        <div id="themeList" class="swatches"></div>
-        <div class="accent-head">
-          <span>Accent colour</span>
-          <button id="accentReset" type="button" class="link-btn">Use theme colour</button>
-        </div>
-        <div id="accentList" class="accents">
-          <label class="accent-custom" title="Pick any colour">
-            <input id="accentPicker" type="color" aria-label="Custom accent colour">
-          </label>
-        </div>
-      </section>
+        <!-- ===== Appearance ===== -->
+        <div class="tab-page" data-page="look">
+          <h2>Appearance</h2>
+          <h3>Theme</h3>
+          <div id="themeList" class="swatches"></div>
 
-      <section>
-        <h3>Tiles</h3>
-        <div class="field"><span>Size</span>
-          <div class="segmented" data-choice="tileSize" role="group" aria-label="Tile size">
-            <button type="button" data-value="small">Small</button>
-            <button type="button" data-value="normal">Normal</button>
-            <button type="button" data-value="large">Large</button>
+          <div class="group">
+            <div class="setting">
+              <span>Accent colour <button id="accentReset" type="button" class="link-btn">Use theme colour</button></span>
+              <div id="accentList" class="accents">
+                <label class="accent-custom" title="Pick any colour">
+                  <input id="accentPicker" type="color" aria-label="Custom accent colour">
+                </label>
+              </div>
+            </div>
+            <div class="setting">
+              <span>Layout</span>
+              <div id="layoutList" class="segmented" data-choice="layout" role="group" aria-label="Layout"></div>
+            </div>
+            <label class="toggle setting"><span>Align content to top</span><input type="checkbox" data-setting="alignTop"></label>
+            <div class="setting">
+              <span>Tile size</span>
+              <div class="segmented" data-choice="tileSize" role="group" aria-label="Tile size">
+                <button type="button" data-value="small">Small</button>
+                <button type="button" data-value="normal">Normal</button>
+                <button type="button" data-value="large">Large</button>
+              </div>
+            </div>
+            <label class="toggle setting"><span>Names under icons</span><input type="checkbox" data-setting="tileLabels"></label>
+          </div>
+
+          <h3>Background</h3>
+          <div class="group">
+            <div class="setting">
+              <span>Background image</span>
+              <div class="row">
+                <button id="bgUpload" type="button">Upload image</button>
+                <button id="bgRemove" type="button" hidden>Remove</button>
+              </div>
+              <input id="bgFile" type="file" accept="image/*" hidden>
+            </div>
+            <label id="dimWrap" class="setting" hidden><span>Dim the image</span>
+              <span class="range"><input type="range" min="0" max="80" step="5" data-setting="bgDim"><output id="dimValue"></output></span>
+            </label>
           </div>
         </div>
-        <label class="toggle"><span>Show names under icons</span><input type="checkbox" data-setting="tileLabels"></label>
-      </section>
 
-      <section>
-        <h3>Layout</h3>
-        <div id="layoutList" class="layouts"></div>
-        <label class="toggle" style="margin-top: 10px"><span>Align content to top</span><input type="checkbox" data-setting="alignTop"></label>
-      </section>
+        <!-- ===== Page ===== -->
+        <div class="tab-page" data-page="page">
+          <h2>Page</h2>
+          <h3>Show on page</h3>
+          <div class="group">
+            <label class="toggle setting"><span>Clock</span><input type="checkbox" data-show="clock"></label>
+            <label class="toggle setting"><span>Date</span><input type="checkbox" data-show="date"></label>
+            <label class="toggle setting"><span>Weather</span><input type="checkbox" data-show="weather"></label>
+            <label class="toggle setting"><span>Greeting</span><input type="checkbox" data-show="greeting"></label>
+            <label class="toggle setting"><span>Search bar</span><input type="checkbox" data-show="search"></label>
+            <label class="toggle setting"><span>Recently closed tabs button</span><input type="checkbox" data-show="closed"></label>
+          </div>
 
-      <section>
-        <h3>Show on page</h3>
-        <label class="toggle"><span>Clock</span><input type="checkbox" data-show="clock"></label>
-        <label class="toggle"><span>Date</span><input type="checkbox" data-show="date"></label>
-        <label class="toggle"><span>Weather</span><input type="checkbox" data-show="weather"></label>
-        <label class="toggle"><span>Greeting</span><input type="checkbox" data-show="greeting"></label>
-        <label class="toggle"><span>Search bar</span><input type="checkbox" data-show="search"></label>
-        <label class="toggle"><span>Recently used</span><input type="checkbox" data-show="recent"></label>
-        <label class="toggle"><span>Custom shortcuts</span><input type="checkbox" data-show="shortcuts"></label>
-        <label class="toggle"><span>Recently closed tabs button</span><input type="checkbox" data-show="closed"></label>
-      </section>
-
-      <section>
-        <h3>Clock</h3>
-        <label class="toggle"><span>24-hour time</span><input type="checkbox" data-setting="clock24"></label>
-        <label class="toggle"><span>Show seconds</span><input type="checkbox" data-setting="showSeconds"></label>
-      </section>
-
-      <section id="weatherSettings">
-        <h3>Weather</h3>
-        <p id="weatherPlace" class="note inline-block"></p>
-        <form id="weatherFind" class="weather-find">
-          <input id="weatherCity" type="text" placeholder="Search a town or city…" aria-label="Town or city" autocomplete="off">
-          <button type="submit">Find</button>
-        </form>
-        <div id="weatherResults" class="weather-results"></div>
-        <div class="row">
-          <button id="weatherLocate" type="button">📍 Use my location</button>
-          <button id="weatherClear" type="button" hidden>Remove location</button>
-        </div>
-        <div class="field" style="margin-top: 12px"><span>Units</span>
-          <div class="segmented" data-choice="weatherUnit" role="group" aria-label="Temperature units">
-            <button type="button" data-value="c">°C · km/h</button>
-            <button type="button" data-value="f">°F · mph</button>
+          <h3>Clock and greeting</h3>
+          <div class="group">
+            <label class="toggle setting"><span>24-hour time</span><input type="checkbox" data-setting="clock24"></label>
+            <label class="toggle setting"><span>Show seconds</span><input type="checkbox" data-setting="showSeconds"></label>
+            <label class="setting"><span>Your name</span>
+              <input type="text" data-setting="name" placeholder="Optional" maxlength="30">
+            </label>
           </div>
         </div>
-      </section>
 
-      <section>
-        <h3>Greeting</h3>
-        <label class="field"><span>Your name</span>
-          <input type="text" data-setting="name" placeholder="Optional" maxlength="30">
-        </label>
-      </section>
-
-      <section>
-        <h3>Search engine</h3>
-        <select id="engineSelect" data-setting="searchEngine" aria-label="Search engine"></select>
-        <label class="toggle" style="margin-top: 10px"><span>Suggest shortcuts, bookmarks &amp; history as I type</span><input type="checkbox" data-setting="searchSuggestions"></label>
-      </section>
-
-      <section>
-        <h3>Background</h3>
-        <div class="row">
-          <button id="bgUpload" type="button">Upload image</button>
-          <button id="bgRemove" type="button" hidden>Remove</button>
-        </div>
-        <input id="bgFile" type="file" accept="image/*" hidden>
-        <label id="dimWrap" class="field" hidden><span>Dim <output id="dimValue"></output></span>
-          <input type="range" min="0" max="80" step="5" data-setting="bgDim">
-        </label>
-      </section>
-
-      <section>
-        <h3>Shortcuts</h3>
-        <p class="note" style="margin-top: 0">Right-click a shortcut for options, or press and hold it to edit.</p>
-        <div class="row">
-          <button id="editShortcuts" type="button">Edit shortcuts</button>
-          <button type="button" data-action="import-bookmarks">Import bookmarks folder</button>
-          <button id="resetShortcuts" type="button">Reset to defaults</button>
-        </div>
-      </section>
-
-      <section>
-        <h3>Recently used</h3>
-        <label class="field"><span>Show <output id="recentValue"></output> sites</span>
-          <input type="range" min="2" max="16" step="1" data-setting="recentCount">
-        </label>
-        <label class="toggle"><span>Skip sites already in my shortcuts</span><input type="checkbox" data-setting="recentSkipShortcuts"></label>
-        <p class="note">Hover a site to 📌 pin it to a category or hide it. You can also drag it onto a category.</p>
-        <div class="row">
-          <span id="hiddenCount" class="note inline"></span>
-          <button id="unhideRecent" type="button" hidden>Show hidden sites again</button>
-        </div>
-      </section>
-
-      <section>
-        <h3>Keyboard</h3>
-        <label class="toggle"><span>Show key numbers on shortcuts</span><input type="checkbox" data-setting="showKeyHints"></label>
-        <dl class="keys" style="margin-top: 10px">
-          <dt><kbd>/</kbd></dt><dd>Jump to search</dd>
-          <dt><kbd>1</kbd>–<kbd>9</kbd></dt><dd>Open your first nine shortcuts</dd>
-          <dt><kbd>Alt</kbd>+<kbd>1</kbd>–<kbd>9</kbd></dt><dd>Same, while typing in the search bar</dd>
-          <dt><kbd>Shift</kbd>+<kbd>1</kbd>–<kbd>9</kbd></dt><dd>Open in a new tab</dd>
-          <dt><kbd>E</kbd></dt><dd>Edit shortcuts</dd>
-          <dt><kbd>Esc</kbd></dt><dd>Leave edit mode, close menus</dd>
-        </dl>
-      </section>
-
-      <section id="syncSettings">
-        <h3>Sync between PCs</h3>
-        <div id="syncOff">
-          <p class="note">Keep your shortcuts, settings and background the same on every PC, through private
-            Gists in your GitHub account.</p>
-          <ol class="steps">
-            <li><a href="https://github.com/settings/tokens/new?scopes=gist&amp;description=Launchpad%20sync"
-                   target="_blank" rel="noopener">Create a GitHub token</a> — only the <b>gist</b> box ticked.
-              Choose an expiry (or “No expiration”), then click <b>Generate token</b>.</li>
-            <li>Copy the token and paste it here:</li>
-          </ol>
-          <form id="syncConnect" class="weather-find">
-            <input id="syncToken" type="password" placeholder="ghp_…" autocomplete="off" spellcheck="false" aria-label="GitHub token">
-            <button type="submit" class="primary">Connect</button>
-          </form>
-          <p class="note">Then do the same on your other PC — it finds the same data. The token stays on each PC
-            and is never included in backups.</p>
-        </div>
-        <div id="syncOn" hidden>
-          <p id="syncStatus" class="note"></p>
-          <label class="field"><span>This PC's name</span><input id="syncDevice" type="text" maxlength="30"></label>
-          <label class="toggle"><span>Sync the background image too</span><input id="syncBackground" type="checkbox"></label>
-          <div id="syncDevices" class="devices" aria-label="Your PCs"></div>
+        <!-- ===== Shortcuts ===== -->
+        <div class="tab-page" data-page="shortcuts">
+          <h2>Shortcuts</h2>
           <div class="row">
-            <button id="syncNow" type="button">Sync now</button>
-            <a id="syncGistLink" class="link-btn" target="_blank" rel="noopener" hidden>View on GitHub</a>
-            <button id="syncDisconnect" type="button" class="danger">Disconnect</button>
+            <button id="editShortcuts" type="button">Edit shortcuts</button>
+            <button type="button" data-action="import-bookmarks">Import bookmarks folder</button>
+          </div>
+          <p class="note">Right-click a shortcut for options, or press and hold it to edit. Drag links or bookmarks
+            onto a category to add them.</p>
+
+          <div class="group">
+            <label class="toggle setting"><span>Show your shortcuts</span><input type="checkbox" data-show="shortcuts"></label>
+            <div class="setting">
+              <span>Start over with the default shortcuts</span>
+              <button id="resetShortcuts" type="button">Reset</button>
+            </div>
+          </div>
+
+          <h3>Recently used</h3>
+          <div class="group">
+            <label class="toggle setting"><span>Show recently used sites</span><input type="checkbox" data-show="recent"></label>
+            <label class="setting"><span>Sites to show</span>
+              <span class="range"><input type="range" min="2" max="16" step="1" data-setting="recentCount"><output id="recentValue"></output></span>
+            </label>
+            <label class="toggle setting"><span>Skip sites already in your shortcuts</span><input type="checkbox" data-setting="recentSkipShortcuts"></label>
+            <div class="setting" id="hiddenRow">
+              <span id="hiddenCount" class="muted"></span>
+              <button id="unhideRecent" type="button" hidden>Show them again</button>
+            </div>
+          </div>
+
+          <h3>Keyboard</h3>
+          <div class="group">
+            <label class="toggle setting"><span>Show 1–9 key numbers on shortcuts</span><input type="checkbox" data-setting="showKeyHints"></label>
+            <dl class="keys">
+              <dt><kbd>/</kbd></dt><dd>Jump to search</dd>
+              <dt><kbd>1</kbd>–<kbd>9</kbd></dt><dd>Open your first nine shortcuts</dd>
+              <dt><kbd>Alt</kbd>+<kbd>1</kbd>–<kbd>9</kbd></dt><dd>Same, while typing in the search bar</dd>
+              <dt><kbd>Shift</kbd>+<kbd>1</kbd>–<kbd>9</kbd></dt><dd>Open in a new tab</dd>
+              <dt><kbd>E</kbd></dt><dd>Edit shortcuts</dd>
+              <dt><kbd>Esc</kbd></dt><dd>Leave edit mode, close menus</dd>
+            </dl>
           </div>
         </div>
-        <p id="syncError" class="note sync-error" role="alert" hidden></p>
-      </section>
 
-      <section>
-        <h3>Export &amp; import</h3>
-        <div class="row">
-          <button id="exportBtn" type="button">Export…</button>
-          <button id="importBtn" type="button">Import…</button>
-          <input id="importFile" type="file" accept="application/json,.json" hidden>
+        <!-- ===== Search and weather ===== -->
+        <div class="tab-page" data-page="search">
+          <h2>Search and weather</h2>
+          <h3>Search</h3>
+          <div class="group">
+            <label class="setting"><span>Search engine</span>
+              <select id="engineSelect" data-setting="searchEngine" aria-label="Search engine"></select>
+            </label>
+            <label class="toggle setting"><span>Suggest shortcuts, bookmarks and history as you type</span><input type="checkbox" data-setting="searchSuggestions"></label>
+          </div>
+
+          <section id="weatherSettings">
+            <h3>Weather</h3>
+            <div class="group">
+              <div class="setting">
+                <span id="weatherPlace"></span>
+                <div class="row">
+                  <button id="weatherLocate" type="button">📍 Use my location</button>
+                  <button id="weatherClear" type="button" hidden>Remove</button>
+                </div>
+              </div>
+              <form id="weatherFind" class="setting weather-find">
+                <input id="weatherCity" type="text" placeholder="Search a town or city…" aria-label="Town or city" autocomplete="off">
+                <button type="submit">Find</button>
+              </form>
+              <div id="weatherResults" class="weather-results"></div>
+              <div class="setting">
+                <span>Units</span>
+                <div class="segmented" data-choice="weatherUnit" role="group" aria-label="Temperature units">
+                  <button type="button" data-value="c">°C · km/h</button>
+                  <button type="button" data-value="f">°F · mph</button>
+                </div>
+              </div>
+            </div>
+          </section>
         </div>
-        <p class="note"><b>Export</b> saves your shortcuts, settings and background to a file you can keep
-          anywhere. <b>Import</b> loads such a file back. Sync already keeps your PCs safe and in step — this is
-          for keeping your own copy.</p>
-        <button id="resetAll" type="button" class="danger">Reset all settings</button>
-      </section>
 
-      <section id="aboutSettings">
-        <h3>About &amp; other PCs</h3>
-        <p class="version-line">
-          <strong>Launchpad <span id="appVersion"></span></strong>
-          <button id="checkUpdates" type="button" class="link-btn">Check now</button>
-        </p>
-        <p id="updateStatus" class="update-status"></p>
-        <button id="reloadExt" type="button" class="primary" hidden>↻ Reload Launchpad</button>
+        <!-- ===== Sync and data ===== -->
+        <div class="tab-page" data-page="sync">
+          <h2>Sync and data</h2>
+          <section id="syncSettings">
+            <h3>Sync between PCs</h3>
+            <div class="group">
+              <div id="syncOff" class="group-pad">
+                <p class="note">Keep your shortcuts, settings and background the same on every PC, through private
+                  Gists in your GitHub account.</p>
+                <ol class="steps">
+                  <li><a href="https://github.com/settings/tokens/new?scopes=gist&amp;description=Launchpad%20sync"
+                         target="_blank" rel="noopener">Create a GitHub token</a> — only the <b>gist</b> box ticked.
+                    Choose an expiry (or “No expiration”), then click <b>Generate token</b>.</li>
+                  <li>Copy the token and paste it here:</li>
+                </ol>
+                <form id="syncConnect" class="weather-find">
+                  <input id="syncToken" type="password" placeholder="ghp_…" autocomplete="off" spellcheck="false" aria-label="GitHub token">
+                  <button type="submit" class="primary">Connect</button>
+                </form>
+                <p class="note">Then do the same on your other PC — it finds the same data. The token stays on each PC.</p>
+              </div>
+              <div id="syncOn" hidden>
+                <div class="setting">
+                  <span id="syncStatus"></span>
+                  <button id="syncNow" type="button">Sync now</button>
+                </div>
+                <label class="setting"><span>This PC's name</span><input id="syncDevice" type="text" maxlength="30"></label>
+                <label class="toggle setting"><span>Sync the background image too</span><input id="syncBackground" type="checkbox"></label>
+                <div id="syncDevices" class="devices group-pad" aria-label="Your PCs"></div>
+                <div class="setting">
+                  <a id="syncGistLink" class="link-btn" target="_blank" rel="noopener" hidden>View on GitHub</a>
+                  <button id="syncDisconnect" type="button" class="danger">Disconnect</button>
+                </div>
+              </div>
+              <p id="syncError" class="note sync-error group-pad" role="alert" hidden></p>
+            </div>
+          </section>
 
-        <p class="cmd-label">Install on another PC — paste into PowerShell:</p>
-        <div class="cmd"><code id="cmdInstall"></code><button id="copyInstall" type="button">Copy</button></div>
-        <ol class="steps">
-          <li><button id="openExtensions" type="button" class="link-btn">Open the extensions page</button> →
-            turn on <b>Developer mode</b> → <b>Load unpacked</b> → pick the <b>Launchpad</b> folder in your user folder.</li>
-          <li>Open a new tab → Settings → <b>Sync between PCs</b> → paste your token → <b>Connect</b>.</li>
-        </ol>
-        <p class="note">No Git on that PC? <a id="zipLink" target="_blank" rel="noopener">Download the ZIP</a>
-          and extract it to a folder you'll keep.</p>
+          <h3>Your data</h3>
+          <div class="group">
+            <div class="setting">
+              <span>Save or load your shortcuts, settings and background as a file</span>
+              <div class="row">
+                <button id="exportBtn" type="button">Export…</button>
+                <button id="importBtn" type="button">Import…</button>
+              </div>
+              <input id="importFile" type="file" accept="application/json,.json" hidden>
+            </div>
+            <div class="setting">
+              <span>Put everything back to how it was at the start</span>
+              <button id="resetAll" type="button" class="danger">Reset everything</button>
+            </div>
+          </div>
+        </div>
 
-        <p class="cmd-label">Update a PC to the newest version:</p>
-        <div class="cmd"><code id="cmdUpdate"></code><button id="copyUpdate" type="button">Copy</button></div>
-        <p class="note">Then reload Launchpad — this section shows a button for it. Your shortcuts aren't affected.
-          <a id="repoLink" target="_blank" rel="noopener">Launchpad on GitHub</a></p>
-      </section>
+        <!-- ===== About ===== -->
+        <div class="tab-page" data-page="about">
+          <h2>About</h2>
+          <section id="aboutSettings">
+            <div class="group">
+              <div class="setting">
+                <span><strong>Launchpad <span id="appVersion"></span></strong>
+                  <span id="updateStatus" class="update-status"></span></span>
+                <button id="checkUpdates" type="button">Check for updates</button>
+              </div>
+              <div class="group-pad" id="reloadRow">
+                <button id="reloadExt" type="button" class="primary" hidden>↻ Reload Launchpad</button>
+              </div>
+            </div>
+
+            <h3>Update another PC</h3>
+            <div class="group group-pad">
+              <div class="cmd"><code id="cmdUpdate"></code><button id="copyUpdate" type="button">Copy</button></div>
+              <p class="note">Paste it into PowerShell on that PC, then click <b>↻ Reload Launchpad</b> here on it.</p>
+            </div>
+
+            <h3>Install on a new PC</h3>
+            <div class="group group-pad">
+              <div class="cmd"><code id="cmdInstall"></code><button id="copyInstall" type="button">Copy</button></div>
+              <ol class="steps">
+                <li>Paste it into PowerShell on the new PC.</li>
+                <li><button id="openExtensions" type="button" class="link-btn">Open the extensions page</button> →
+                  turn on <b>Developer mode</b> → <b>Load unpacked</b> → pick the <b>Launchpad</b> folder.</li>
+                <li>Open a new tab → Settings → <b>Sync and data</b> → paste your token → <b>Connect</b>.</li>
+              </ol>
+              <p class="note">No Git on that PC? <a id="zipLink" target="_blank" rel="noopener">Download the ZIP</a>
+                instead and extract it to a folder you'll keep. <a id="repoLink" target="_blank" rel="noopener">Launchpad on GitHub</a></p>
+            </div>
+          </section>
+        </div>
+
+      </div>
     </div>
-  </aside>
+  </div>
 
   <dialog id="shortcutDialog">
     <form method="dialog">

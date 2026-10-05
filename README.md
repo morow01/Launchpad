@@ -52,7 +52,7 @@ manifest.json      Extension manifest. Permissions:
 newtab.html        Page markup, including the settings panel and dialogs
 css/base.css       Colour tokens, widgets, tiles, categories, dialog, background
 css/layouts.css    One block per layout: body[data-layout="..."]
-css/panel.css      Cog button and settings panel
+css/panel.css      Cog button and the settings window (sidebar of sections, option rows)
 css/features.css   Collapse/open-all, status dots, pin/hide, bookmarks dialog, banner, toast
 css/suggest.css    Search suggestions dropdown
 css/weather.css    Weather line, forecast pop-up and weather settings
@@ -78,7 +78,7 @@ js/status.js       Online/offline dots for shortcuts with "Show online status"
 js/tiles.js        Builds a single tile (shared by categories and Recently used)
 js/icons.js        Picks the best icon: custom > apple-touch-icon > Brave's favicon cache > Google
 js/background.js   Custom background image (IndexedDB)
-js/panel.js        Settings panel UI
+js/panel.js        Settings window: section switching, themes, accents, layout buttons, option binding
 ```
 
 ## Common changes
@@ -86,7 +86,7 @@ js/panel.js        Settings panel UI
 - **New accent preset:** add it to `ACCENTS` in `js/themes.js`.
 - **Tile sizes:** everything scales from `--tile-scale` (see `TILE_SCALE` in `js/main.js` and the top of the tiles section in `css/base.css`).
 - **New layout:** add an entry to `LAYOUTS` in `js/layouts.js`, then add a `body[data-layout="id"]` block in `css/layouts.css`.
-- **New on/off or text option:** add a default to `DEFAULTS` in `js/settings.js`. Then add an input to the panel in
+- **New on/off or text option:** add a default to `DEFAULTS` in `js/settings.js`. Then add an input to the right section (`.tab-page`) of the settings window in
   `newtab.html` with `data-setting="key"` (or `data-show="key"` for a show/hide toggle). The panel binds it
   automatically. React to the value in the `settings.onChange` callback in `js/main.js`. Sync and export pick it up automatically.
 - **New widget:** add its element to `newtab.html`, add a `show` default in `settings.js`, map it in `WIDGETS` in `main.js`, and add a toggle in the panel.
