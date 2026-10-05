@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Launchpad",
-  "version": "3.2",
+  "version": "3.3",
   "description": "A personal new tab page: shortcuts, search, weather, themes and layouts.",
   "permissions": ["search", "history", "favicon", "bookmarks", "sessions", "tabs", "geolocation"],
   "chrome_url_overrides": { "newtab": "newtab.html" }

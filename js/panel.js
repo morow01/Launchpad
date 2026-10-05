@@ -25,8 +25,10 @@ function showTab(name) {
     const on = t.dataset.tab === name;
     t.classList.toggle("on", on);
     t.setAttribute("aria-current", on ? "page" : "false");
+    if (on) document.getElementById("panelSectionTitle").textContent = t.textContent.trim();
   }
   panel.querySelector(".panel-body").scrollTop = 0;
+  panel.querySelector(".panel-main").classList.remove("scrolled");
   try { localStorage.setItem(TAB_KEY, name); } catch {}
 }
 
@@ -184,6 +186,11 @@ export function initPanel() {
 
   cog.addEventListener("click", () => (panel.classList.contains("open") ? closePanel() : openPanel()));
   for (const t of panel.querySelectorAll(".panel-tab")) t.addEventListener("click", () => showTab(t.dataset.tab));
+  // A divider appears under the fixed header once the content scrolls beneath it
+  const body = panel.querySelector(".panel-body");
+  body.addEventListener("scroll", () => {
+    panel.querySelector(".panel-main").classList.toggle("scrolled", body.scrollTop > 2);
+  }, { passive: true });
   document.getElementById("panelClose").addEventListener("click", closePanel);
   scrim.addEventListener("click", closePanel);
   document.addEventListener("keydown", (e) => {
