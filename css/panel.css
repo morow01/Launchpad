@@ -207,12 +207,12 @@ select option:checked { background-color: var(--accent); color: #fff; }
 .update-status { display: block; margin-top: 2px; font-size: 13px; font-weight: 400; color: var(--p-muted); }
 .update-status.ok { color: #30a46c; }
 .update-status.warn { color: #f59e0b; }
-.panel .cmd { display: flex; gap: 6px; align-items: stretch; }
+.panel .cmd { display: flex; gap: 6px; align-items: center; }
 .panel .cmd code {
   flex: 1; min-width: 0; padding: 7px 9px; border-radius: 8px;
   background: var(--p-card); border: 1px solid var(--p-border);
   font: 12px/1.4 Consolas, "Cascadia Mono", monospace; color: var(--p-text);
-  white-space: nowrap; overflow-x: auto;
+  white-space: pre-wrap; overflow-wrap: anywhere;
 }
 .panel .steps .link-btn { font-size: 13px; }
 .panel .note a { color: var(--accent); }

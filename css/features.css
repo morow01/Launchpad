@@ -287,8 +287,6 @@ dialog.confirm-dialog .cd-danger:focus-visible { outline-color: #e5484d; }
 .panel-body::-webkit-scrollbar { width: 14px; }
 .panel-body::-webkit-scrollbar-thumb { border-width: 4px; }
 /* Short horizontal scrollers (command boxes): thinner */
-.cmd code::-webkit-scrollbar { height: 8px; }
-.cmd code::-webkit-scrollbar-thumb { border-width: 2px; }
 
 /* ---- Hint while a link is dragged over the page: what letting go will do ---- */
 .drop-banner {
