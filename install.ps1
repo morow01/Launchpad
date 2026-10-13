@@ -23,7 +23,8 @@ function Test-Launchpad([string]$path) {
 
 # 1. Find an existing copy, or download one
 $dir = $null
-$candidates = if ($env:LAUNCHPAD_DIR) { @($env:LAUNCHPAD_DIR) } else { @((Join-Path $HOME 'Launchpad'), (Join-Path $HOME 'BraveNewTab')) }
+# (wrapped in @() so a single folder stays a list — otherwise [0] would be its first letter)
+$candidates = @(if ($env:LAUNCHPAD_DIR) { $env:LAUNCHPAD_DIR } else { (Join-Path $HOME 'Launchpad'), (Join-Path $HOME 'BraveNewTab') })
 foreach ($c in $candidates) { if (Test-Launchpad $c) { $dir = $c; break } }
 
 $fresh = $false
@@ -31,7 +32,8 @@ if ($dir) {
     Write-Host "Found Launchpad in $dir" -ForegroundColor Green
 }
 else {
-    $dir = $candidates[0]
+    $dir = [string]$candidates[0]
+    if (-not [IO.Path]::IsPathRooted($dir)) { throw "Refusing to install into '$dir': it isn't a full folder path." }
     $fresh = $true
     if (Test-Path $dir) { throw "$dir already exists but isn't Launchpad. Move it away, or set `$env:LAUNCHPAD_DIR to another folder." }
     Write-Host "Downloading Launchpad to $dir ..." -ForegroundColor Cyan
