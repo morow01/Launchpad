@@ -289,3 +289,20 @@ dialog.confirm-dialog .cd-danger:focus-visible { outline-color: #e5484d; }
 /* Short horizontal scrollers (command boxes): thinner */
 .cmd code::-webkit-scrollbar { height: 8px; }
 .cmd code::-webkit-scrollbar-thumb { border-width: 2px; }
+
+/* ---- Hint while a link is dragged over the page: what letting go will do ---- */
+.drop-banner {
+  position: fixed; top: 16px; left: 50%; transform: translateX(-50%); z-index: 40;
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  max-width: calc(100vw - 140px); padding: 10px 20px; border-radius: 14px; text-align: center;
+  background: var(--p-bg); color: var(--p-text);
+  border: 1px solid var(--p-border);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .25);
+  pointer-events: none; transition: background .15s, border-color .15s, color .15s;
+}
+.drop-banner strong { font-size: 14px; font-weight: 600; }
+.drop-banner small { font-size: 12px; color: var(--p-muted); }
+.drop-banner small:empty { display: none; }
+.drop-banner.adding { background: var(--accent); border-color: var(--accent); color: #fff; }
+/* A collapsed category that a dragged link would be added to */
+.category.drop-into { outline: 2px dashed var(--accent); outline-offset: 8px; border-radius: 12px; }

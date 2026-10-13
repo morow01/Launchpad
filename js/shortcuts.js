@@ -758,46 +758,84 @@ function parseDroppedLink(dt) {
   return { name: cleanTitle(title) || siteName(url), url };
 }
 
-function ensureDropTarget() {
-  // Make sure there is at least one category to drop into
-  if (!categoriesEl.querySelector(".tiles:not([hidden])")) {
-    if (categories.length === 0) categories.push({ name: "Favourites", items: [] });
-    setEditing(true);
-  }
-}
-
 function startExternalDrag() {
-  ensureDropTarget();
   const sample = categoriesEl.querySelector(".tile:not(.add)")?.getBoundingClientRect();
   const placeholder = document.createElement("div");
   placeholder.className = "tile-placeholder";
   placeholder.style.width = (sample?.width || 110) + "px";
   placeholder.style.height = (sample?.height || 86) + "px";
-  const first = categoriesEl.querySelector(".tiles:not([hidden])");
-  animateReflow(() => first.insertBefore(placeholder, first.querySelector(".add")));
   document.body.classList.add("link-dragging");
-  external = { placeholder };
+  // The placeholder only joins a category once the pointer is over one
+  external = { placeholder, over: false, collapsed: null };
 }
 
 function endExternalDrag() {
   if (!external) return;
   external.placeholder.remove();
+  categoriesEl.querySelector(".category.drop-into")?.classList.remove("drop-into");
   external = null;
-  document.body.classList.remove("link-dragging", "link-over-category", "link-to-search");
+  document.body.classList.remove("link-dragging", "link-over-category");
+  dropBanner.hidden = true;
 }
 
-const searchForm = document.getElementById("search");
+const dropBanner = document.getElementById("dropBanner");
 
-/** Is (x, y) over the search bar (with a little margin), and is the search bar showing? */
-function overSearchBar(x, y) {
-  if (searchForm.hidden) return false;
-  const r = searchForm.getBoundingClientRect();
-  return x >= r.left - 8 && x <= r.right + 8 && y >= r.top - 8 && y <= r.bottom + 8;
+/** The category under (x, y), or null. */
+function categoryAt(x, y) {
+  return [...categoriesEl.querySelectorAll(".category")].find((sec) => {
+    const r = sec.getBoundingClientRect();
+    return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
+  }) || null;
 }
 
 /**
- * A link dropped on the search bar opens in a new tab; dropped text is searched for in a new
- * tab. You go to the new tab, unless Ctrl is held: then it opens in the background.
+ * Follows a dragged link: over a category it shows where the shortcut would go; anywhere
+ * else nothing is shown in the categories, because letting go there opens the link instead.
+ */
+function trackExternal(e, pageDrag) {
+  const { placeholder } = external;
+  const section = categoryAt(e.clientX, e.clientY);
+  const tiles = section?.querySelector(".tiles");
+  categoriesEl.querySelector(".category.drop-into")?.classList.remove("drop-into");
+  external.collapsed = null;
+
+  if (section && tiles && !tiles.hidden) {
+    placePlaceholderIn(placeholder, tiles, e.clientX, e.clientY);
+    external.over = true;
+  } else {
+    if (placeholder.isConnected) animateReflow(() => placeholder.remove());
+    external.over = !!section;
+    if (section) {
+      // A collapsed category: the shortcut goes at its end
+      external.collapsed = Number(section.dataset.cat);
+      section.classList.add("drop-into");
+    }
+  }
+  document.body.classList.toggle("link-over-category", external.over);
+
+  // Say what letting go would do
+  const isLink = [...(e.dataTransfer?.types || [])].includes("text/uri-list");
+  let main, sub = "";
+  if (external.over) {
+    main = `Release to add to ${categories[Number(section.dataset.cat)]?.name || "this category"}`;
+  } else if (pageDrag) {
+    main = "Drop on a category to pin it there";
+  } else if (isLink) {
+    main = "Release to open in a new tab";
+    sub = "Hold Ctrl to stay on this page · drop on a category to add a shortcut";
+  } else {
+    main = "Release to search for this text";
+    sub = "Hold Ctrl to stay on this page";
+  }
+  dropBanner.querySelector("strong").textContent = main;
+  dropBanner.querySelector("small").textContent = sub;
+  dropBanner.classList.toggle("adding", external.over);
+  dropBanner.hidden = false;
+}
+
+/**
+ * A link dropped on the page (not on a category) opens in a new tab; dropped text is searched
+ * for in a new tab. You go to the new tab, unless Ctrl is held: then it opens in the background.
  */
 async function openDropped(dt, switchTo) {
   const link = parseDroppedLink(dt);
@@ -829,7 +867,7 @@ function openTab(url, switchTo) {
 
 function initLinkDrop() {
   // Drags that start on this page (a Recently used tile) vs. from elsewhere (bookmarks bar,
-  // another Brave window). Only page drags must land exactly on a category to count.
+  // another Brave window). A page drag dropped off the categories is simply cancelled.
   let pageDrag = false;
   let leaveTimer = null;
   document.addEventListener("dragstart", () => { pageDrag = true; }, true);
@@ -843,12 +881,8 @@ function initLinkDrop() {
     e.preventDefault();
     clearTimeout(leaveTimer);
     if (!external) startExternalDrag();
-    // Over the search bar = open the page (like dropping on the address bar); elsewhere = add a shortcut
-    external.toSearch = overSearchBar(e.clientX, e.clientY);
-    e.dataTransfer.dropEffect = external.toSearch ? "link" : "copy";
-    document.body.classList.toggle("link-to-search", external.toSearch);
-    if (!external.toSearch) external.over = placePlaceholder(external.placeholder, e.clientX, e.clientY);
-    document.body.classList.toggle("link-over-category", !external.toSearch && external.over);
+    trackExternal(e, pageDrag);
+    e.dataTransfer.dropEffect = external.over ? "copy" : "link";
   });
 
   // Leaving the window: Brave doesn't say where a drag from another window went (no
@@ -862,31 +896,43 @@ function initLinkDrop() {
 
   document.addEventListener("drop", (e) => {
     if (!isLinkDrag(e) && !external) return;
-    e.preventDefault(); // never let the browser open the dropped link instead
+    e.preventDefault(); // never let the browser replace this page with the dropped link
     clearTimeout(leaveTimer);
     if (!external) {
-      // The drop arrived right after a "leave": place it where it was dropped
+      // The drop arrived right after a "leave": work out where it landed
       startExternalDrag();
-      external.toSearch = overSearchBar(e.clientX, e.clientY);
-      external.over = placePlaceholder(external.placeholder, e.clientX, e.clientY);
+      trackExternal(e, pageDrag);
     }
-    if (external.toSearch) {
+    const { placeholder, over, collapsed } = external;
+
+    // Not on a category: open it (a Recently used tile dropped there is just cancelled)
+    if (!over) {
       endExternalDrag();
-      return openDropped(e.dataTransfer, !(e.ctrlKey || e.metaKey)); // Ctrl = open in the background, stay here
+      if (pageDrag) return;
+      return openDropped(e.dataTransfer, !(e.ctrlKey || e.metaKey)); // Ctrl = background tab, stay here
     }
-    if (pageDrag && !external.over) return endExternalDrag(); // a Recently used tile dropped off the categories: cancel
+
+    // On a category: add it as a shortcut where the dashed slot is (or at the end of a collapsed one)
     const item = parseDroppedLink(e.dataTransfer);
-    const { placeholder } = external;
-    const tiles = placeholder.parentElement;
-    const ci = Number(tiles?.dataset.cat);
-    const index = [...tiles.children].filter((el) => el.dataset.index !== undefined || el === placeholder).indexOf(placeholder);
+    let ci, index;
+    if (collapsed !== null) {
+      ci = collapsed;
+      index = categories[ci]?.items.length ?? 0;
+    } else {
+      const tiles = placeholder.parentElement;
+      ci = Number(tiles?.dataset.cat);
+      index = tiles
+        ? [...tiles.children].filter((el) => el.dataset.index !== undefined || el === placeholder).indexOf(placeholder)
+        : -1;
+    }
     endExternalDrag();
-    if (!item || Number.isNaN(ci)) return;
+    if (!item || Number.isNaN(ci) || !categories[ci] || index < 0) return;
 
     categories[ci].items.splice(index, 0, item);
     save();
     render();
-    flashTile(ci, index);
+    if (collapsed !== null) toast(`Added ${item.name} to ${categories[ci].name}`);
+    else flashTile(ci, index);
   });
 }
 
