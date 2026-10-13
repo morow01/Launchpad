@@ -97,6 +97,7 @@
   background: var(--p-card); padding: 0 14px; margin-bottom: 4px;
 }
 .group-pad { padding: 12px 0; }
+.group.group-pad { padding: 12px 14px; } /* a card that is itself the padded block */
 .group > .group-pad:empty, #reloadRow:has(> [hidden]) { display: none; }
 .setting {
   display: flex; align-items: center; justify-content: space-between; gap: 14px;
