@@ -797,7 +797,7 @@ function overSearchBar(x, y) {
 
 /**
  * A link dropped on the search bar opens in a new tab; dropped text is searched for in a new
- * tab. The tab opens in the background (you stay on Launchpad) unless Ctrl is held.
+ * tab. You go to the new tab, unless Ctrl is held: then it opens in the background.
  */
 async function openDropped(dt, switchTo) {
   const link = parseDroppedLink(dt);
@@ -872,7 +872,7 @@ function initLinkDrop() {
     }
     if (external.toSearch) {
       endExternalDrag();
-      return openDropped(e.dataTransfer, e.ctrlKey || e.metaKey); // Ctrl = switch to the new tab
+      return openDropped(e.dataTransfer, !(e.ctrlKey || e.metaKey)); // Ctrl = open in the background, stay here
     }
     if (pageDrag && !external.over) return endExternalDrag(); // a Recently used tile dropped off the categories: cancel
     const item = parseDroppedLink(e.dataTransfer);
