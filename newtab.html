@@ -340,28 +340,34 @@
                   <span id="updateStatus" class="update-status"></span></span>
                 <button id="checkUpdates" type="button">Check for updates</button>
               </div>
+              <div class="setting">
+                <span>Automatic updates
+                  <span id="autoStatus" class="update-status"></span></span>
+              </div>
               <div class="group-pad" id="reloadRow">
                 <button id="reloadExt" type="button" class="primary" hidden>↻ Reload Launchpad</button>
+                <p class="note">This tab closes when Launchpad reloads — just open a new one.</p>
               </div>
             </div>
 
-            <h3>Update another PC</h3>
+            <h3>Set up a PC</h3>
             <div class="group group-pad">
-              <div class="cmd"><code id="cmdUpdate"></code><button id="copyUpdate" type="button">Copy</button></div>
-              <p class="note">Paste it into PowerShell on that PC, then click <b>↻ Reload Launchpad</b> here on it.</p>
-            </div>
-
-            <h3>Install on a new PC</h3>
-            <div class="group group-pad">
+              <p class="note" style="margin-top: 0">Run this once in PowerShell on each PC. It installs Launchpad if it
+                isn't there yet, and switches on automatic updates — new versions then arrive by themselves.</p>
               <div class="cmd"><code id="cmdInstall"></code><button id="copyInstall" type="button">Copy</button></div>
               <ol class="steps">
-                <li>Paste it into PowerShell on the new PC.</li>
-                <li><button id="openExtensions" type="button" class="link-btn">Open the extensions page</button> →
+                <li>On a <b>new</b> PC only: <button id="openExtensions" type="button" class="link-btn">open the extensions page</button> →
                   turn on <b>Developer mode</b> → <b>Load unpacked</b> → pick the <b>Launchpad</b> folder.</li>
                 <li>Open a new tab → Settings → <b>Sync and data</b> → paste your token → <b>Connect</b>.</li>
               </ol>
-              <p class="note">No Git on that PC? <a id="zipLink" target="_blank" rel="noopener">Download the ZIP</a>
-                instead and extract it to a folder you'll keep. <a id="repoLink" target="_blank" rel="noopener">Launchpad on GitHub</a></p>
+            </div>
+
+            <h3>Update by hand</h3>
+            <div class="group group-pad">
+              <div class="cmd"><code id="cmdUpdate"></code><button id="copyUpdate" type="button">Copy</button></div>
+              <p class="note">Only needed where automatic updates are off. The next new tab then runs the new version.
+                <a id="repoLink" target="_blank" rel="noopener">Launchpad on GitHub</a> ·
+                <a id="zipLink" target="_blank" rel="noopener">Download as ZIP</a></p>
             </div>
           </section>
         </div>

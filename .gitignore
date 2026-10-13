@@ -13,3 +13,6 @@ NewTab Backup/
 *.zip
 *.crx
 *.pem
+
+# Written on each PC by update.ps1 (when it last checked for updates)
+autoupdate-status.json

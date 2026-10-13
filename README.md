@@ -6,10 +6,32 @@ A personal new tab page for Brave (works in any Chromium browser). It includes:
 - a "Recently used" row from your history (named from page titles), with pin and hide
 - online status dots, keyboard shortcuts, sync between PCs, and export / import
 
-## Install / reload
-1. Go to `brave://extensions` and turn on **Developer mode**.
-2. Click **Load unpacked** and select this folder.
-3. After editing any file, click the reload icon on the extension card, then open a new tab.
+## Set up a PC
+Run this once in PowerShell on each computer:
+
+```powershell
+irm https://raw.githubusercontent.com/morow01/Launchpad/main/install.ps1 | iex
+```
+
+- **New computer:** it downloads Launchpad to `%USERPROFILE%\Launchpad` (with Git, or as a ZIP if Git
+  isn't installed). Then in `brave://extensions` turn on **Developer mode**, click **Load unpacked** and
+  pick that folder. Finally connect **Settings → Sync and data** to get your shortcuts.
+- **Computer that already has Launchpad:** it keeps the folder as it is.
+- **Both:** it switches on automatic updates.
+
+## Automatic updates
+The installer registers a scheduled task, **Launchpad auto-update**, that runs `update.ps1` every hour
+without showing a window. `update.ps1` brings the folder up to date with GitHub (`git pull`, or the ZIP
+again for ZIP installs) and notes when it last checked in `autoupdate-status.json`.
+
+Brave reads the page's files from the folder each time a new tab opens, so the next new tab runs the new
+version, with no reload. Only an update that changes the manifest (for example a new permission) needs
+the extension reloaded; **Settings → About** shows a button when that happens, plus the version, the
+auto-update status and these commands. **Sync → Your PCs** lists the version each PC runs.
+
+- Update by hand: `powershell -ExecutionPolicy Bypass -File "$HOME\Launchpad\update.ps1"`
+- Switch automatic updates off: `Unregister-ScheduledTask -TaskName 'Launchpad auto-update' -Confirm:$false`
+- Bump `version` in `manifest.json` with every change, so PCs can tell versions apart.
 
 ## Your data
 Shortcuts and settings are stored inside Brave, tied to this extension. Brave identifies an
@@ -18,12 +40,6 @@ With Sync on, just reconnect and everything comes back.
 
 **Settings → Export & import** saves your shortcuts, settings and background to a file
 (`launchpad-<date>.json`), or loads one back. A fresh install offers to set up sync or import a file.
-
-## Updates and other PCs
-**Settings → About & other PCs** shows the version and checks GitHub for a newer one. It also has
-copy buttons for the install and update commands. After `git pull` it offers a one-click
-**Reload Launchpad**. **Sync → Your PCs** lists which version each PC runs.
-Bump `version` in `manifest.json` with every change, so the check can tell versions apart.
 
 ## Sync between PCs
 **Settings → Sync between PCs** keeps shortcuts and settings identical on every PC through a
@@ -49,7 +65,9 @@ manifest.json      Extension manifest. Permissions:
                      bookmarks    - bookmarks folder import
                      sessions, tabs - "Recently closed" tabs (tabs = their titles and addresses)
                      geolocation  - "Use my location" for the weather
-newtab.html        Page markup, including the settings panel and dialogs
+install.ps1        One-command setup for a PC (download if needed + automatic updates)
+update.ps1         Brings the folder up to date with GitHub (run hourly by the scheduled task)
+newtab.html        Page markup, including the settings window and dialogs
 css/base.css       Colour tokens, widgets, tiles, categories, dialog, background
 css/layouts.css    One block per layout: body[data-layout="..."]
 css/panel.css      Cog button and the settings window (sidebar of sections, option rows)
@@ -60,7 +78,7 @@ js/main.js         Entry point: wires the modules together and applies settings
 js/settings.js     Settings store (localStorage). Defaults live here
 js/events.js       Page-wide events: newtab:changed (drives sync), newtab:rendered
 js/backup.js       Export / import to a file, and the welcome banner on a fresh start
-js/about.js        Version, update check, reload button, install / update commands
+js/about.js        Running version, update check, auto-update status, setup / update commands
 js/sync.js         Sync between PCs via a private GitHub Gist (token stays on each PC)
 js/themes.js       Theme colour definitions
 js/layouts.js      Layout list and the mini previews shown in the panel

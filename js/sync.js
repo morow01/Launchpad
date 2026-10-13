@@ -9,7 +9,7 @@ import * as settings from "./settings.js";
 import { getShortcuts, setShortcuts } from "./shortcuts.js";
 import { hash, isUntouched, toast, blobToDataUrl } from "./backup.js";
 import { getBackgroundBlob, setBackgroundBlob, removeBackground } from "./background.js";
-import { VERSION, compareVersions, latestVersionCached } from "./about.js";
+import { getVersion, versionReady, compareVersions, latestVersionCached } from "./about.js";
 import { confirmDialog } from "./menu.js";
 
 const STATE_KEY = "newtab.sync";
@@ -140,7 +140,7 @@ async function push({ keepalive = false } = {}) {
     state.gistId = gist.id;
   }
   Object.assign(state, { lastRemote: updated, pushedHash: h, dirty: false, lastSync: Date.now(), lastFrom: state.device, error: "" });
-  state.versionReported = VERSION;
+  state.versionReported = getVersion();
   lastAction = { kind: "uploaded" };
   persist();
 }
@@ -262,11 +262,11 @@ async function pull() {
   if (!remote) return push();
   if (remote.devices) state.devices = remote.devices;
   // First sync after this PC was updated: report the new version even if nothing else changed
-  if (state.versionReported !== VERSION) state.pushedHash = "";
+  if (state.versionReported !== getVersion()) state.pushedHash = "";
 
   if (remote.updated === state.lastRemote) {
     // Nothing new from other PCs
-    if (state.dirty || state.versionReported !== VERSION) return push();
+    if (state.dirty || state.versionReported !== getVersion()) return push();
     state.lastSync = Date.now();
     state.error = "";
     lastAction = { kind: "uptodate" };
@@ -421,7 +421,7 @@ function deviceList() {
   if (state.oldDevice) delete list[state.oldDevice];
   state.oldDevice = null;
   for (const [name, d] of Object.entries(list)) if (Date.now() - (d.seen || 0) > FORGET_AFTER) delete list[name];
-  list[state.device] = { version: VERSION, seen: Date.now() };
+  list[state.device] = { version: getVersion(), seen: Date.now() };
   state.devices = list;
   return list;
 }
@@ -549,7 +549,7 @@ export function initSync() {
   window.addEventListener("newtab:changed", onLocalChange);
 
   // Check for changes from other PCs when a tab opens or comes back into view
-  if (connected()) run(pull);
+  versionReady.then(() => { if (connected()) run(pull); }); // (the version is reported with the sync)
   document.addEventListener("visibilitychange", () => {
     if (!connected()) return;
     if (document.hidden) {
