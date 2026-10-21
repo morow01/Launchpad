@@ -25,6 +25,7 @@ function Save-Status([string]$mode, [bool]$updated, [string]$problem) {
         version = Get-LocalVersion
         mode    = $mode
         error   = if ($problem) { $problem } else { $null }
+        folder  = $dir  # lets Settings > About show the update command for this exact folder
     }
     # UTF-8 without a BOM, so the page can read it as JSON
     [IO.File]::WriteAllText($statusFile, ($status | ConvertTo-Json), (New-Object Text.UTF8Encoding $false))

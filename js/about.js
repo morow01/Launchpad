@@ -15,7 +15,8 @@ const AUTO_STALE = 3 * 60 * 60 * 1000;    // the hourly updater counts as stoppe
 
 /** One command per PC: installs Launchpad if needed and switches on automatic updates. */
 export const SETUP_CMD = `irm https://raw.githubusercontent.com/${REPO}/main/install.ps1 | iex`;
-export const UPDATE_CMD = `powershell -ExecutionPolicy Bypass -File "$HOME\\Launchpad\\update.ps1"`;
+const updateCmd = (folder = "$HOME\\Launchpad") => `powershell -ExecutionPolicy Bypass -File "${folder}\\update.ps1"`;
+let UPDATE_CMD = updateCmd(); // the real folder replaces this guess once update.ps1 has run on this PC
 const ZIP_URL = `https://github.com/${REPO}/archive/refs/heads/main.zip`;
 
 /** What Brave loaded when the extension started (only the manifest matters here). */
@@ -108,6 +109,7 @@ async function renderAbout({ force = false } = {}) {
 
   const autoOn = !!updater && Date.now() - Date.parse(updater.checked) < AUTO_STALE;
   reload.hidden = !needsReload(disk);
+  if (updater?.folder) document.getElementById("cmdUpdate").textContent = UPDATE_CMD = updateCmd(updater.folder);
 
   if (!reload.hidden) {
     setStatus(status, "This update needs a quick reload to finish.", "warn");
